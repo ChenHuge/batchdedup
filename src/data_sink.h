@@ -12,6 +12,8 @@ class DataSink
 public:
     DataSink();
 
+    virtual ~DataSink() = 0;
+
     virtual void ProcessBuffer() = 0;
 
 protected:

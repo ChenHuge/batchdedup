@@ -9,6 +9,8 @@ using namespace std;
 class DataSpout
 {
 public:
+    virtual ~DataSpout() = 0;
+
     virtual bool GetRecord(DataRecord*& pdata) = 0;
 
     virtual int GetRecordDest(DataRecord* pdata) = 0;

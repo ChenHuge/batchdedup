@@ -4,9 +4,6 @@
 #include "data_spout.h"
 #include "data_sink.h"
 
-extern const uint16_t SENDER_HAS_DATA;
-extern const uint16_t SENDER_HAS_NO_DATA;
-
 class MpiEngine
 {
 public:

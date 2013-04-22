@@ -2,9 +2,6 @@
 #include "batch_dedup_config.h"
 #include "mpi.h"
 
-const uint16_t SENDER_HAS_DATA = 0x1;
-const uint16_t SENDER_HAS_NO_DATA = 0x2;
-
 MpiEngine::MpiEngine()
 	: mSpoutPtr(NULL),
       mSinkPtr(NULL),

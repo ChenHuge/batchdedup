@@ -9,14 +9,18 @@
 
 using namespace std;
 
-const uint32_t CKSUM_LEN = 20;			// length of sha-1 checksum
-const uint32_t RECORD_SIZE = 36;			// size of each block in scan log
-const uint32_t FIX_SEGMENT_SIZE = (2 * 1024 * 1024);	// size of a segment
-const uint32_t AVG_BLOCK_SIZE = (4 * 1024);
+extern const uint32_t CKSUM_LEN;			// length of sha-1 checksum
+extern const uint32_t RECORD_SIZE;			// size of each block in scan log
+extern const uint32_t FIX_SEGMENT_SIZE;	// size of a segment
+extern const uint32_t AVG_BLOCK_SIZE;
+extern const uint16_t SENDER_HAS_DATA;
+extern const uint16_t SENDER_HAS_NO_DATA;
 
 class DataRecord
 {
 public:
+    virtual ~DataRecord() = 0;
+
     virtual int GetSize() = 0;
 
     virtual void ToBuffer(char* buf) = 0;

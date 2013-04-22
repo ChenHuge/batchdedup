@@ -3,6 +3,13 @@
 #include <stdio.h>
 #include <sstream>
 
+const uint32_t CKSUM_LEN = 20;			// length of sha-1 checksum
+const uint32_t RECORD_SIZE = 36;			// size of each block in scan log
+const uint32_t FIX_SEGMENT_SIZE = (2 * 1024 * 1024);	// size of a segment
+const uint32_t AVG_BLOCK_SIZE = (4 * 1024);
+const uint16_t SENDER_HAS_DATA = 0x1;
+const uint16_t SENDER_HAS_NO_DATA = 0x2;
+
 MsgHeader::MsgHeader()
 	: mTotalSize(0),
       mNumRecords(0),
