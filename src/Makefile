@@ -1,7 +1,7 @@
 CC = mpicc
 CXX = mpicxx
 LDLIBS = -lssl
-CPPFLAGS = -g -Wall -DDEBUG
+CPPFLAGS = -g -Wall -DDEBUG -wd981
 #CPPFLAGS = -O2 -Wall -DNDEBUG
 
 BINS = batch_dedup
