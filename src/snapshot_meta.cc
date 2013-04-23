@@ -51,7 +51,7 @@ int BlockMeta::GetSize()
     return mBlk.GetSize() + mRef.GetSize();
 }
 
-void BlockMeta::ToStream(ostream& os)
+void BlockMeta::ToStream(ostream& os) const
 {
     mBlk.ToStream(os);
     mRef.ToStream(os);
