@@ -37,7 +37,7 @@ public:
 public:
     int GetSize();
     
-    void ToStream(ostream& os);
+    void ToStream(ostream& os) const;
     bool FromStream(istream& is);
 
     void ToBuffer(char* buf);
