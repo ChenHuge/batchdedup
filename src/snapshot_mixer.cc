@@ -8,6 +8,10 @@ SnapshotMixer::SnapshotMixer(int vmid, int ssid, const string& input, const stri
       mInputFile(input),
       mOutputFile(output)
 {
+    LOG_DEBUG("generate trace: vmid " << vmid 
+              << ", ssid " << ssid 
+              << ", input " << input 
+              << ", output " << output);
 }
 
 bool SnapshotMixer::Generate()
@@ -71,6 +75,7 @@ bool SnapshotMixer::Generate()
 
     is.close();
     os.close();
+    LOG_INFO("trace generated: " << mOutputFile);
     return true;
 }
 

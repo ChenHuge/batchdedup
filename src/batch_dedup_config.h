@@ -63,6 +63,7 @@ public:
 
     static void   SetLocalPath(const string& path);
     static string GetLocalPath();
+    static void   RemoveLocalPath();
 
     static void   SetRemotePath(const string& path);
     static string GetRemotePath();

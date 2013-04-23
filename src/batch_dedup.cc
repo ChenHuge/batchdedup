@@ -36,8 +36,8 @@ void init(int argc, char** argv)
     Env::SetRemotePath("/oasis/triton/scratch/wei-ucsb/");
     Env::SetLocalPath("/state/partition1/batch_dedup/");
     Env::SetHomePath("/home/wei-ucsb/batchdedup/");
-    Env::LoadSampleTraceList("/home/wei-ucsb/batchdedup/sample_traces");
     Env::SetLogger();
+    Env::LoadSampleTraceList("/home/wei-ucsb/batchdedup/sample_traces");
 }
 
 void final()
@@ -68,9 +68,10 @@ int main(int argc, char** argv)
         string mixed_trace = Env::GetVmTrace(vmid);
         SnapshotMixer mixer(vmid, ssid, source_trace, mixed_trace);
         mixer.Generate();
+        Env::CopyToRemote(mixed_trace);
         i++;
     }
-
+    /*
     // step1: exchange dirty segments
     MpiEngine* p_step1 = new MpiEngine();
     TraceReader* p_reader = new TraceReader();
@@ -83,10 +84,11 @@ int main(int argc, char** argv)
     delete p_step1;
     delete p_reader;
     delete p_accu;
-
+    */
     delete[] send_buf;
     delete[] recv_buf;
     MPI_Finalize();
+    Env::RemoveLocalPath();
     Env::CloseLogger();
     return 0;
 }

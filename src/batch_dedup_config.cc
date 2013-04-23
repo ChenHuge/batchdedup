@@ -119,7 +119,7 @@ void Env::LoadSampleTraceList(string fname)
 {
     ifstream is(fname.c_str(), ios::in);
     if (!is.is_open()) {
-        mLogger << "file not exist: " << fname << endl;
+        LOG_ERR("file not exist: " << fname);
         return;
     }
 
@@ -127,7 +127,7 @@ void Env::LoadSampleTraceList(string fname)
     while (is.good()) {
         getline(is, trace_fname);
         mSampleTraces.push_back(trace_fname);
-        mLogger << "add trace file: " << trace_fname << endl;
+        LOG_DEBUG("add trace file: " << trace_fname);
     }
     is.close();
 }
@@ -162,11 +162,16 @@ void Env::SetLogger()
     stringstream ss;
     ss << mHomePath << mRank << ".log";
     mLogger.open(ss.str().c_str(), ios::out | ios::trunc | ios:: app);
+    if (!mLogger.is_open()) {
+        cerr << "unable to open log: " << ss.str();
+    }
 }
 
 void Env::CloseLogger()
 {
-    mLogger.close();
+    if (mLogger.is_open()) {
+        mLogger.close();
+    }
 }
 
 void Env::SetLocalPath(string const &path)
@@ -179,6 +184,13 @@ void Env::SetLocalPath(string const &path)
 string Env::GetLocalPath()
 {
     return mLocalPath;
+}
+
+void Env::RemoveLocalPath()
+{
+    stringstream cmd;
+    cmd << "rm -rf " << mLocalPath;
+    system(cmd.str().c_str());
 }
 
 void Env::SetRemotePath(string const &path)
