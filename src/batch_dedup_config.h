@@ -67,6 +67,7 @@ public:
 
     static void   SetRemotePath(const string& path);
     static string GetRemotePath();
+    static void   CopyToRemote(const string& fname);
 
     static void   SetHomePath(const string& path);
     static string GetHomePath();
