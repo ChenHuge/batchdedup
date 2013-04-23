@@ -161,7 +161,7 @@ void Env::SetLogger()
 {
     stringstream ss;
     ss << mHomePath << mRank << ".log";
-    mLogger.open(ss.str().c_str(), ios::out | ios::trunc | ios:: app);
+    mLogger.open(ss.str().c_str(), ios::out | ios::trunc);
     if (!mLogger.is_open()) {
         cerr << "unable to open log: " << ss.str();
     }
