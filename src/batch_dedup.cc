@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fstream>
+#include <iostream>
 #include <stdlib.h>
 #include "trace_types.h"
 #include "batch_dedup_config.h"

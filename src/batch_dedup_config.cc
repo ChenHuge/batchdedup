@@ -215,6 +215,26 @@ bool Env::CreateDir(string const &path, bool empty)
     system(ss.str().c_str());
 }
 
+void Env::SetSendBuf(char* buf)
+{
+    mSendBuf = buf;
+}
+
+char* Env::GetSendBuf()
+{
+    return mSendBuf;
+}
+
+void Env::SetRecvBuf(char *buf)
+{
+    mRecvBuf = buf;
+}
+
+char* Env::GetRecvBuf()
+{
+    return mRecvBuf;
+}
+
 
 
 
