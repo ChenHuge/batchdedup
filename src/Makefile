@@ -20,7 +20,7 @@ $(BIN_OBJS) $(DEP_OBJS):
 
 $(DEPS): %:%.h
 
-dedup_buffer.o: disk_io.h
+$(BIN_OBJS) $(DEP_OBJS): disk_io.h batch_dedup_config.h
 
 clean:
 	rm -f $(BINS) *.o
