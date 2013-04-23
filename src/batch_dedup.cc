@@ -35,8 +35,8 @@ void init(int argc, char** argv)
     Env::SetWriteBufSize(atoi(argv[6]) * 1024);
     Env::SetRemotePath("/oasis/triton/scratch/wei-ucsb/");
     Env::SetLocalPath("/state/partition1/batch_dedup/");
-    Env::SetHomePath("/home/wei-ucsb/batch_dedup/");
-    Env::LoadSampleTraceList("/home/wei-ucsb/batch_dedup/sample_traces");
+    Env::SetHomePath("/home/wei-ucsb/batchdedup/");
+    Env::LoadSampleTraceList("/home/wei-ucsb/batchdedup/sample_traces");
     Env::SetLogger();
 }
 

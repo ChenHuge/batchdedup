@@ -12,7 +12,7 @@ class DataSink
 public:
     DataSink();
 
-    virtual ~DataSink() = 0;
+    virtual ~DataSink();
 
     virtual void ProcessBuffer() = 0;
 

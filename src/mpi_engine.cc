@@ -72,7 +72,7 @@ void MpiEngine::Start()
             mHeaders[i].mFlags = send_flag;
             mHeaders[i].ToBuffer(&send_buf[i * buf_size]);
         }
-
+        
         // send recv size
         rc = MPI_Alltoall(mWritePos, 1, MPI_INT, 
                           mRecvCounts, 1, MPI_INT, 
@@ -90,7 +90,7 @@ void MpiEngine::Start()
             Env::mLogger << "send data fail" << endl;
             break;
         }
-
+        
         // check finish condition
         bool finished = true;
         MsgHeader hd;

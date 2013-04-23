@@ -9,7 +9,7 @@ using namespace std;
 class DataSpout
 {
 public:
-    virtual ~DataSpout() = 0;
+    virtual ~DataSpout();
 
     virtual bool GetRecord(DataRecord*& pdata) = 0;
 

@@ -72,8 +72,8 @@ public:
 
     static string GetTaskName();
 
-    static bool   CreateDir(const string& path, bool empty = false)
-;
+    static void   CreateDir(const string& path, bool empty = false);
+
 public:
     static ofstream mLogger;
 

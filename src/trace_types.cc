@@ -9,6 +9,10 @@ const uint32_t AVG_BLOCK_SIZE = (4 * 1024);
 const uint16_t SENDER_HAS_DATA = 0x1;
 const uint16_t SENDER_HAS_NO_DATA = 0x2;
 
+DataRecord::~DataRecord()
+{
+}
+
 MsgHeader::MsgHeader()
 	: mTotalSize(0),
       mNumRecords(0),
@@ -121,7 +125,7 @@ uint32_t Checksum::Last4Bytes() const
 
 int Block::GetSize()
 {
-    return CKSUM_LEN + sizeof(Block::mFileID) + sizeof(Block::mFlags) + sizeof(Block::mSize), sizeof(Block::mOffset);
+    return CKSUM_LEN + sizeof(Block::mFileID) + sizeof(Block::mFlags) + sizeof(Block::mSize) + sizeof(Block::mOffset);
 }
 
 Block::Block(int size, const Checksum& ck) 

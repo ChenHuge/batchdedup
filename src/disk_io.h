@@ -47,8 +47,8 @@ class RecordWriter
 {
 public:
     RecordWriter(const string& fname, bool append = false)
-        : mFileName(fname),
-          mBuffer(NULL)
+        : mBuffer(NULL),
+          mFileName(fname)
     {
         mBuffer = new char[Env::GetWriteBufSize()];
         mOutput.rdbuf()->pubsetbuf(mBuffer, Env::GetReadBufSize());

@@ -11,10 +11,26 @@ const int      MAX_NUM_SNAPSHOTS    = 100;
 const uint16_t BLOCK_CLEAN_FLAG     = 0;
 const uint16_t BLOCK_DIRTY_FLAG     = 1;
 
+int            Env::mRank = -1;
+int            Env::mNumTasks = -1;
+int            Env::mNumPartitions = -1;
+int            Env::mNumVms = -1;
+int            Env::mNumSnapshots = -1;
+size_t         Env::mMpiBufSize = 0;
+char*          Env::mSendBuf = NULL;
+char*          Env::mRecvBuf = NULL;
+size_t         Env::mReadBufSize = 0;
+size_t         Env::mWriteBufSize = 0;
+vector<string> Env::mSampleTraces; // a list of sample trace files
+vector<int>    Env::mMyVmIds; // a list of VM IDs that belong to this MPI instance
+string         Env::mLocalPath; // path to local storage
+string         Env::mRemotePath; // path to remote storage (lustre)
+string         Env::mHomePath; // path to home directory
+ofstream       Env::mLogger;
 
 void Env::SetRank(int rank) 
 { 
-    mRank = rank; 
+    Env::mRank = rank; 
 }
 
 int Env::GetRank() 
@@ -201,7 +217,7 @@ string Env::GetTaskName()
     return ss.str();
 }
 
-bool Env::CreateDir(string const &path, bool empty)
+void Env::CreateDir(string const &path, bool empty)
 {
     if (empty) {
         stringstream ss;

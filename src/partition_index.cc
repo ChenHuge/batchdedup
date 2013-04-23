@@ -9,6 +9,20 @@ int IndexEntry::GetSize()
     return CKSUM_LEN + mRef.GetSize();
 }
 
+void IndexEntry::FromBuffer(char* buf)
+{
+    mCksum.FromBuffer(buf);
+    buf += CKSUM_LEN;
+    mRef.FromBuffer(buf);
+}
+
+void IndexEntry::ToBuffer(char *buf)
+{
+    mCksum.ToBuffer(buf);
+    buf += CKSUM_LEN;
+    mRef.ToBuffer(buf);
+}
+
 bool IndexEntry::FromStream(istream &is)
 {
     return mCksum.FromStream(is) && mRef.FromStream(is);

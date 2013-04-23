@@ -10,6 +10,10 @@ DataSink::DataSink()
     mBufSize = Env::GetMpiBufSize();
 }
 
+DataSink::~DataSink()
+{
+}
+
 bool DataSink::GetRecord()
 {
     while ((mRecvBuf + mReadPos) >= mEndOfBuf) {

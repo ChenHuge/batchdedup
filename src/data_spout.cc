@@ -1,6 +1,10 @@
+#include <string>
 #include "data_spout.h"
 #include "batch_dedup_config.h"
-#include <string>
+
+DataSpout::~DataSpout()
+{
+}
 
 TraceReader::TraceReader()
 {

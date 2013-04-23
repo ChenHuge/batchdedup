@@ -20,7 +20,7 @@ extern const uint16_t SENDER_HAS_NO_DATA;
 class DataRecord
 {
 public:
-    virtual ~DataRecord() = 0;
+    virtual ~DataRecord();
 
     virtual int GetSize() = 0;
 
