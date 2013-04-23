@@ -74,20 +74,22 @@ void MpiEngine::Start()
         }
         
         // send recv size
+        LOG_DEBUG("sending msg size");
         rc = MPI_Alltoall(mWritePos, 1, MPI_INT, 
                           mRecvCounts, 1, MPI_INT, 
                           MPI_COMM_WORLD);
         if (rc != MPI_SUCCESS) {
-            Env::mLogger << "send rcount fail" << endl;
+            LOG_ERROR("send rcount fail");
             break;
         }
 
         // send data
+        LOG_DEBUG("sending data");
         rc = MPI_Alltoallv(send_buf, mWritePos, mDispls, MPI_CHAR, 
                            recv_buf, mRecvCounts, mDispls, MPI_CHAR, 
                            MPI_COMM_WORLD);
         if (rc != MPI_SUCCESS) {
-            Env::mLogger << "send data fail" << endl;
+            LOG_ERROR("send data fail");
             break;
         }
         
@@ -109,7 +111,7 @@ void MpiEngine::Start()
         }
 
         if (finished) {
-            Env::mLogger << "nobody has data to send, stop" << endl;
+            LOG_INFO("nobody has data to send, stop");
             break;
         }
     }

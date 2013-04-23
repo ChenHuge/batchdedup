@@ -71,7 +71,7 @@ int main(int argc, char** argv)
         Env::CopyToRemote(mixed_trace);
         i++;
     }
-    /*
+    
     // step1: exchange dirty segments
     MpiEngine* p_step1 = new MpiEngine();
     TraceReader* p_reader = new TraceReader();
@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     delete p_step1;
     delete p_reader;
     delete p_accu;
-    */
+    
     delete[] send_buf;
     delete[] recv_buf;
     MPI_Finalize();

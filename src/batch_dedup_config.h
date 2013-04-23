@@ -99,18 +99,18 @@ private:
 
 #define LOG_ERROR(msg)	\
     do {	\
-    	Env::mLogger << "ERROR: " << __PRETTY_FUNCTION__<< msg << endl;	\
+    	Env::mLogger << "ERROR: " << __PRETTY_FUNCTION__ << " " << msg << endl; \
     } while (0)
 
 #define LOG_INFO(msg)	\
     do {	\
-    	Env::mLogger << "INFO: " << __PRETTY_FUNCTION__<< msg << endl;	\
+    	Env::mLogger << "INFO: " << __PRETTY_FUNCTION__ << " " << msg << endl; \
     } while (0)
 
 #ifdef DEBUG
 #define LOG_DEBUG(msg)	\
     do {	\
-    	Env::mLogger << "DEBUG: " << __PRETTY_FUNCTION__<< msg << endl;	\
+    	Env::mLogger << "DEBUG: " << __PRETTY_FUNCTION__ << " " << msg << endl; \
     } while (0)
 #else
 #define LOG_DEBUG(msg) do {} while (0)

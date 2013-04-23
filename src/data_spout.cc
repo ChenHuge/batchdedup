@@ -49,6 +49,7 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
                 LOG_ERROR("can not open trace: " << fname);
                 return false;
             }
+            LOG_INFO("now reading trace " << fname);
         }
 
         // find a dirty block
