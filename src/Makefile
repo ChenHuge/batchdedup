@@ -1,7 +1,7 @@
 CC = mpicc
 CXX = mpicxx
 LDLIBS = -lssl -lstdc++
-CPPFLAGS = -g -Wall -DDEBUG -wd981 -wd869
+CPPFLAGS = -g -Wall -DDEBUG -wd981 -wd869 -wd1418
 #CPPFLAGS = -g -Wall -DDEBUG
 #CPPFLAGS = -O2 -Wall -DNDEBUG
 
