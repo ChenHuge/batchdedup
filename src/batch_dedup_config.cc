@@ -204,6 +204,13 @@ string Env::GetRemotePath()
     return mRemotePath;
 }
 
+void Env::copyToRemote(const string& fname)
+{
+    stringstream cmd;
+    cmd << "cp " << fname << " " << mRemotePath;
+    system(cmd.str().c_str());
+}
+
 void Env::SetHomePath(string const &path)
 {
     mHomePath = path + "/" + Env::GetTaskName() + "/";
