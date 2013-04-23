@@ -9,7 +9,6 @@
 
 using namespace std;
 
-extern const uint32_t CKSUM_LEN;			// length of sha-1 checksum
 extern const uint32_t RECORD_SIZE;			// size of each block in scan log
 extern const uint32_t FIX_SEGMENT_SIZE;	// size of a segment
 extern const uint32_t AVG_BLOCK_SIZE;
