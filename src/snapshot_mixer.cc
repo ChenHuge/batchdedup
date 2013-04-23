@@ -63,7 +63,7 @@ bool SnapshotMixer::Generate()
 
         // update the VM ID
         for (size_t j = 0; j < seg.mBlocklist.size(); j++) {
-            seg.mBlocklist[j].mFileID = mVmId;
+            seg.mBlocklist[j].mFileID = (uint16_t)mVmId;
         }
 
         seg.SaveBlockList(os);

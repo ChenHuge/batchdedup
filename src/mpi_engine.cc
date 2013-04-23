@@ -30,7 +30,7 @@ void MpiEngine::Init()
     int sz = mHeaders[0].GetSize();
     for (int i = 0; i < Env::GetNumTasks(); i++) {
         mWritePos[i] = sz;
-        mHeaders[i].mRecordSize = mSpoutPtr->GetRecordSize();
+        mHeaders[i].mRecordSize = (uint16_t)mSpoutPtr->GetRecordSize();
         mDispls[i] = i * Env::GetMpiBufSize();
         mRecvCounts[i] = 0;
     }
