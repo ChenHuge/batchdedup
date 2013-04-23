@@ -119,7 +119,7 @@ void Env::LoadSampleTraceList(string fname)
 {
     ifstream is(fname.c_str(), ios::in);
     if (!is.is_open()) {
-        LOG_ERR("file not exist: " << fname);
+        LOG_ERROR("file not exist: " << fname);
         return;
     }
 
@@ -204,7 +204,7 @@ string Env::GetRemotePath()
     return mRemotePath;
 }
 
-void Env::copyToRemote(const string& fname)
+void Env::CopyToRemote(const string& fname)
 {
     stringstream cmd;
     cmd << "cp " << fname << " " << mRemotePath;
