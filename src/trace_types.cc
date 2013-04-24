@@ -53,9 +53,9 @@ string MsgHeader::ToString()
 {
     stringstream ss;
     ss << "total size " << mTotalSize
-       << ", num of records" << mNumRecords
-       << ", record size" << mRecordSize
-       << ", flags" << mFlags;
+       << ", num of records " << mNumRecords
+       << ", record size " << mRecordSize
+       << ", flags " << mFlags;
     return ss.str();
 }
 

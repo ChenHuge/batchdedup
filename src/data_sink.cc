@@ -70,6 +70,7 @@ void RawRecordAccumulator::ProcessBuffer()
         mWriterPtrs[part_id % num_parts]->Put(*pblk);
         num_records++;
     }
+    mReadPos = 0;	// reset after processing
     LOG_DEBUG("processed " << num_records << " records");
 }
 
