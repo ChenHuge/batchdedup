@@ -338,6 +338,7 @@ int Env::GetNodeId(const Checksum& cksum)
 string Env::ToString()
 {
     stringstream ss;
+    GetVmId(0);
     ss << "rank " << mRank
        << ", tasks " << mNumTasks
        << ", Vms " << mNumVms
@@ -348,7 +349,7 @@ string Env::ToString()
        << ", local path " << mLocalPath
        << ", remote path " << mRemotePath
        << ", home path " << mHomePath
-       << ", Vms per node " << mMyVmIds.size()
+       << ", Vms on this node " << mMyVmIds.size()
        << ", partitions per node " << GetNumPartitionsPerNode()
        << ", begin of partition " << GetPartitionBegin()
        << ", end of partition " << GetPartitionEnd()
