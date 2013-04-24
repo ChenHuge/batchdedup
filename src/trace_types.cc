@@ -49,6 +49,16 @@ void MsgHeader::FromBuffer(char* buf)
     memcpy((char*)&mFlags, buf, sizeof(mFlags));
 }    
 
+string MsgHeader::ToString()
+{
+    stringstream ss;
+    ss << "total size " << mTotalSize
+       << ", num of records" << mNumRecords
+       << ", record size" << mRecordSize
+       << ", flags" << mFlags;
+    return ss.str();
+}
+
 Checksum::Checksum()
 {
     memset(mData, '\0', CKSUM_LEN);

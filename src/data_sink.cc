@@ -21,6 +21,7 @@ bool DataSink::GetRecord()
         if (mReadPos == 0) {
             mHeader.FromBuffer(&mRecvBuf[0]);
             mReadPos += mHeader.GetSize();
+            LOG_DEBUG("process buffer: " << mHeader.ToString());
         }
         // go to the next buffer if current buffer no longer has data
         if ((mReadPos + mRecordSize) > mHeader.mTotalSize || mReadPos >= mBufSize) {

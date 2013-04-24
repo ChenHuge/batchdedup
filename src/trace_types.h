@@ -48,6 +48,8 @@ public:
 
     void ToBuffer(char* buf);
     void FromBuffer(char* buf);
+
+    string ToString();
 };
 
 struct Checksum
