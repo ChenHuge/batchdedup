@@ -97,6 +97,7 @@ void MpiEngine::Start()
         bool finished = true;
         MsgHeader hd;
         for (int i = 0; i < num_tasks; i++) {
+            mHeaders[i].mNumRecords = 0;	// also clear header state here
             hd.FromBuffer(&recv_buf[i * buf_size]);
             if (hd.mFlags == SENDER_HAS_DATA)
                 finished = false;
