@@ -29,6 +29,9 @@ protected:
     int         mRecordSize;
 
 protected:
+    // after data processing, must be restored to initial state
+    void Reset();
+
     // extract the next record from receive buffers, store in mRecord,
     // return true on success, false if no record can be extracted.
     bool GetRecord();

@@ -4,14 +4,19 @@
 
 DataSink::DataSink()
 {
-    mRecvBuf = Env::GetRecvBuf();
-    mReadPos = 0;
-    mEndOfBuf = mRecvBuf + Env::GetMpiBufSize() * Env::GetNumTasks();
-    mBufSize = Env::GetMpiBufSize();
+    reset();
 }
 
 DataSink::~DataSink()
 {
+}
+
+void DataSink::Reset()
+{
+    mRecvBuf = Env::GetRecvBuf();
+    mReadPos = 0;
+    mEndOfBuf = mRecvBuf + Env::GetMpiBufSize() * Env::GetNumTasks();
+    mBufSize = Env::GetMpiBufSize();
 }
 
 bool DataSink::GetRecord()
@@ -70,8 +75,8 @@ void RawRecordAccumulator::ProcessBuffer()
         mWriterPtrs[part_id % num_parts]->Put(*pblk);
         num_records++;
     }
-    mReadPos = 0;	// reset after processing
     LOG_DEBUG("processed " << num_records << " records");
+    Reset();
 }
 
 
