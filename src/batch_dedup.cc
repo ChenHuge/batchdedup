@@ -47,6 +47,10 @@ void final()
     stringstream ss;
     ss << "cp -r " << Env::GetLocalPath() << "* " << Env::GetRemotePath();
     system(ss.str().c_str());
+    ss.clear();
+    ss.str("");
+    ss << "rm -rf " << Env::GetLocalPath();
+    system(ss.str().c_str());
 }
 
 int main(int argc, char** argv)
