@@ -63,11 +63,14 @@ RawRecordAccumulator::~RawRecordAccumulator()
 void RawRecordAccumulator::ProcessBuffer()
 {
     int num_parts = Env::GetNumPartitionsPerNode();
+    int num_records = 0;
     while (GetRecord()) {
         Block* pblk = static_cast<Block*>(mRecord);
         int part_id = Env::GetPartitionId(pblk->mCksum);
         mWriterPtrs[part_id % num_parts]->Put(*pblk);
+        num_records++;
     }
+    LOG_INFO("processed " << num_records << " records");
 }
 
 
