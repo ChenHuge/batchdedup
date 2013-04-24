@@ -4,7 +4,7 @@
 
 DataSink::DataSink()
 {
-    reset();
+    Reset();
 }
 
 DataSink::~DataSink()
