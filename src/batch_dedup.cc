@@ -98,6 +98,7 @@ int main(int argc, char** argv)
     delete[] send_buf;
     delete[] recv_buf;
     MPI_Finalize();
+    final();
     Env::RemoveLocalPath();
     Env::CloseLogger();
     return 0;
