@@ -16,7 +16,7 @@ DataSink::~DataSink()
 
 bool DataSink::GetRecord()
 {
-    while ((mRecvBuf + mReadPos) >= mEndOfBuf) {
+    while ((mRecvBuf + mReadPos) < mEndOfBuf) {
         // initialize header if at the beginning of a buffer
         if (mReadPos == 0) {
             mHeader.FromBuffer(&mRecvBuf[0]);
@@ -70,7 +70,7 @@ void RawRecordAccumulator::ProcessBuffer()
         mWriterPtrs[part_id % num_parts]->Put(*pblk);
         num_records++;
     }
-    LOG_INFO("processed " << num_records << " records");
+    LOG_DEBUG("processed " << num_records << " records");
 }
 
 
