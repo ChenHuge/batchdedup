@@ -195,8 +195,10 @@ void Env::RemoveLocalPath()
 
 void Env::SetRemotePath(string const &path)
 {
-    mRemotePath = path;
-    CreateDir(path);
+    stringstream ss;
+    ss << path << "/" << mNumPartitions << "/";
+    mRemotePath = ss.str();
+    CreateDir(mRemotePath);
 }
 
 string Env::GetRemotePath()
@@ -270,14 +272,89 @@ char* Env::GetRecvBuf()
     return mRecvBuf;
 }
 
+int Env::GetNumPartitionsPerNode()
+{
+    if (mNumPartitions % mNumTasks == 0) {
+        return mNumPartitions / mNumTasks;
+    }
+    else {
+        return (mNumPartitions / mNumTasks) + 1;
+    }
+}
 
+int Env::GetPartitionBegin()
+{
+    return mRank * GetNumPartitionsPerNode();
+}
 
+int Env::GetPartitionEnd()
+{
+    int end =  (mRank + 1) * GetNumPartitionsPerNode();
+    if (end > mNumPartitions) {
+        return mNumPartitions;
+    }
+    else {
+        return end;
+    }
+}
 
+string Env::GetRemoteIndexName(int partid)
+{
+    stringstream ss;
+    int subdir = partid & 0xFF;
+    ss << mRemotePath << subdir << "/" << partid << ".index";
+    return ss.str();
+}
 
+string Env::GetLocalIndexName(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".index";
+    return ss.str();
+}
 
+string Env::GetStep1Name(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step1";
+    return ss.str();
+}
 
+int Env::GetPartitionId(const Checksum& cksum)
+{
+    return cksum.First4Bytes() % mNumPartitions;
+}
 
+int Env::GetNodeId(int partid)
+{
+    return partid / GetNumPartitionsPerNode();
+}
 
+int Env::GetNodeId(const Checksum& cksum)
+{
+    return GetNodeId(GetPartitionId(cksum));
+}
+
+string Env::ToString()
+{
+    stringstream ss;
+    ss << "rank " << mRank
+       << ", tasks " << mNumTasks
+       << ", Vms " << mNumVms
+       << ", snapshots " << mNumSnapshots
+       << ", mpi buffer " << mMpiBufSize
+       << ", read buffer " << mReadBufSize
+       << ", write buffer " << mWriteBufSize
+       << ", local path " << mLocalPath
+       << ", remote path " << mRemotePath
+       << ", home path " << mHomePath
+       << ", Vms per node " << mMyVmIds.size()
+       << ", partitions per node " << GetNumPartitionsPerNode()
+       << ", begin of partition " << GetPartitionBegin()
+       << ", end of partition " << GetPartitionEnd()
+        ;
+    return ss.str();
+}
 
 
 

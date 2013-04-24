@@ -16,7 +16,6 @@ all: $(BINS)
 $(BINS): $(DEP_OBJS) $(BIN_OBJS)
 
 $(BIN_OBJS) $(DEP_OBJS): 
-#%:%.cc
 
 $(DEPS): %:%.h
 

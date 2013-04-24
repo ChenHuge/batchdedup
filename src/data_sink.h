@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include "trace_types.h"
+#include "disk_io.h"
 
 using namespace std;
 
@@ -16,8 +17,10 @@ public:
 
     virtual void ProcessBuffer() = 0;
 
-protected:
+public:
     DataRecord* mRecord;
+
+protected:
     MsgHeader   mHeader;
     int         mReadPos;       // reading position of current buffer
     char*       mRecvBuf;       // current receive buffer
@@ -41,8 +44,7 @@ public:
     void ProcessBuffer();
 
 private:
-    ofstream* mOutputs;
-    char**    mBuffers;
+    RecordWriter<Block>** mWriterPtrs;
 };
 
 #endif

@@ -29,7 +29,7 @@ int TraceReader::GetRecordSize()
 int TraceReader::GetRecordDest(DataRecord* pdata)
 {
     Block* pblk = static_cast<Block*>(pdata);
-    return pblk->mCksum.First4Bytes() % mNumTasks;
+    return Env::GetNodeId(pblk->mCksum);
 }
 
 // TODO: change to RecordReader

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stdlib.h>
 #include "trace_types.h"
 #include "batch_dedup_config.h"
@@ -38,11 +39,14 @@ void init(int argc, char** argv)
     Env::SetHomePath("/home/wei-ucsb/batchdedup/");
     Env::SetLogger();
     Env::LoadSampleTraceList("/home/wei-ucsb/batchdedup/sample_traces");
+    LOG_INFO(Env::ToString());
 }
 
 void final()
 {
-    system("cp /state/partition1/batch_dedup/* /oasis/triton/scratch/wei-ucsb/");
+    stringstream ss;
+    ss << "cp -r " << Env::GetLocalPath() << " " << Env::GetRemotePath();
+    system(ss.str().c_str());
 }
 
 int main(int argc, char** argv)
@@ -59,7 +63,7 @@ int main(int argc, char** argv)
     Env::SetSendBuf(send_buf);
     Env::SetRecvBuf(recv_buf);
 
-    // step0: prepare traces
+    // local-1: prepare traces, partition indices
     int i = 0;
     while (Env::GetVmId(i) >= 0) {
         int vmid = Env::GetVmId(i);
@@ -68,11 +72,17 @@ int main(int argc, char** argv)
         string mixed_trace = Env::GetVmTrace(vmid);
         SnapshotMixer mixer(vmid, ssid, source_trace, mixed_trace);
         mixer.Generate();
-        Env::CopyToRemote(mixed_trace);
         i++;
     }
+    for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
+        string remote_fname = Env::GetRemoteIndexName(i);
+        string local_fname = Env::GetLocalIndexName(i);
+        stringstream cmd;
+        cmd << "cp " << remote_fname << " " << local_fname;
+        system(cmd.str().c_str());
+    }
     
-    // step1: exchange dirty segments
+    // mpi-1: exchange dirty segments
     MpiEngine* p_step1 = new MpiEngine();
     TraceReader* p_reader = new TraceReader();
     RawRecordAccumulator* p_accu = new RawRecordAccumulator();

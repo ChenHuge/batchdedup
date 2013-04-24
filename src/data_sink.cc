@@ -40,33 +40,32 @@ RawRecordAccumulator::RawRecordAccumulator()
 {
     mRecord = static_cast<DataRecord*>(new Block);
     mRecordSize = mRecord->GetSize();
-    int num_parts = Env::GetNumPartitions();
-    mBuffers = new char*[num_parts];
-    mOutputs = new ofstream[num_parts];
-    for (int i = 0; i < num_parts; i++) {
-        mBuffers[i] = new char[Env::GetWriteBufSize()];
-        mOutputs[i].rdbuf()->pubsetbuf(mBuffers[i], Env::GetWriteBufSize());
+    int num_parts = Env::GetNumPartitionsPerNode();
+    mWriterPtrs = new RecordWriter<Block>*[num_parts];
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); ++partid)
+    {
+        mWriterPtrs[partid % num_parts] = 
+            new RecordWriter<Block>(Env::GetStep1Name(partid));
     }
 }
 
 RawRecordAccumulator::~RawRecordAccumulator()
 {
-    int num_tasks = Env::GetNumTasks();
-    for (int i = 0; i < num_tasks; i++) {
-        mOutputs[i].close();
-        delete[] mBuffers[i];
+    int num_parts = Env::GetNumPartitionsPerNode();
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); ++partid)
+    {
+        delete mWriterPtrs[partid % num_parts];
     }
-    delete[] mBuffers;
-    delete[] mOutputs;
+    delete[] mWriterPtrs;
 }
 
 void RawRecordAccumulator::ProcessBuffer()
 {
-    int num_parts = Env::GetNumPartitions();
+    int num_parts = Env::GetNumPartitionsPerNode();
     while (GetRecord()) {
         Block* pblk = static_cast<Block*>(mRecord);
-        int part_id = pblk->mCksum.Last4Bytes() % num_parts;
-        pblk->ToStream(mOutputs[part_id]);
+        int part_id = Env::GetPartitionId(pblk->mCksum);
+        mWriterPtrs[part_id % num_parts]->Put(*pblk);
     }
 }
 

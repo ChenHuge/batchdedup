@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include "trace_types.h"
 
 using namespace std;
 
@@ -76,6 +77,20 @@ public:
 
     static void   CreateDir(const string& path, bool empty = false);
 
+    static int    GetPartitionBegin();
+    static int    GetPartitionEnd();
+
+    static string GetRemoteIndexName(int partid);
+    static string GetLocalIndexName(int partid);
+
+    static int    GetNumPartitionsPerNode();
+    static int    GetPartitionId(const Checksum& cksum);
+    static int    GetNodeId(int partid);
+    static int    GetNodeId(const Checksum& cksum);
+
+    static string GetStep1Name(int partid);
+
+    static string ToString();
 public:
     static ofstream mLogger;
 
