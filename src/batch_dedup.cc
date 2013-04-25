@@ -49,7 +49,7 @@ void init(int argc, char** argv)
 void final()
 {
     stringstream ss;
-    ss << "cp -r " << Env::GetLocalPath() << "* " << Env::GetRemotePath();
+    ss << "cp -r " << Env::GetLocalPath() << "*.index " << Env::GetRemotePath();
     system(ss.str().c_str());
     //ss.clear();
     //ss.str("");
