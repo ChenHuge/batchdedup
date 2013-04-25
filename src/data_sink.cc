@@ -163,7 +163,8 @@ DupRecordAccumulator::DupRecordAccumulator()
     mRecordSize = mRecord->GetSize();
     for (int i = 0; Env::GetVmId(i) >= 0; i++) {
         int vmid = Env::GetVmId(i);
-        mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep3OutputName(vmid), true);
+        //mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep3OutputName(vmid), true);
+        mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep4OutputName(vmid));
     }
 }
 
