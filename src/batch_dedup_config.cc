@@ -135,7 +135,7 @@ void Env::LoadSampleTraceList(string fname)
 string Env::GetVmTrace(int vmid)
 {
     stringstream ss;
-    ss << GetLocalPath() << "/" << vmid << "." << mNumSnapshots << ".trace";
+    ss << GetLocalPath() << "/vm." << vmid << "." << mNumSnapshots << ".trace";
     return ss.str();
 }
 
@@ -365,7 +365,7 @@ string Env::GetStep4InputName(int partid)
 string Env::GetStep4OutputName(int vmid)
 {
     stringstream ss;
-    ss << mLocalPath << "vm." << vmid << ".step4.out";
+    ss << mLocalPath << "vm." << vmid << "." << mNumSnapshots << ".step4.out";
     return ss.str();
 }
 
