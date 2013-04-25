@@ -4,6 +4,8 @@
 #include <fstream>
 #include "trace_types.h"
 #include "disk_io.h"
+#include "partition_index.h"
+#include "snapshot_meta.h"
 
 using namespace std;
 
@@ -70,5 +72,31 @@ private:
     RecordReader<Block>* mInputPtr;
     int mPartId;
 };
+
+class NewRefReader : public DataSpout
+{
+public:
+    IndexEntry mRecord;
+
+public:
+    NewRefReader();
+
+    // override
+    ~NewRefReader();
+
+    // override
+    bool GetRecord(DataRecord*& pdata);
+
+    // override
+    int GetRecordDest(DataRecord* pdata);
+
+    // override
+    int GetRecordSize();
+
+private:
+    RecordReader<BlockMeta>* mInputPtr;
+    int mVmIdx;
+};
+
 
 #endif

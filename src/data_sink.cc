@@ -119,6 +119,42 @@ void NewRecordAccumulator::ProcessBuffer()
 }
 
 
+NewRefAccumulator::NewRefAccumulator()
+{
+    mRecord = static_cast<DataRecord*>(new IndexEntry);
+    mRecordSize = mRecord->GetSize();
+    int num_parts = Env::GetNumPartitionsPerNode();
+    mWriterPtrs = new RecordWriter<IndexEntry>*[num_parts];
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); ++partid)
+    {
+        mWriterPtrs[partid % num_parts] = 
+            new RecordWriter<IndexEntry>(Env::GetStep4InputName(partid));
+    }
+}
+
+NewRefAccumulator::~NewRefAccumulator()
+{
+    int num_parts = Env::GetNumPartitionsPerNode();
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); ++partid)
+    {
+        delete mWriterPtrs[partid % num_parts];
+    }
+    delete[] mWriterPtrs;
+}
+
+void NewRefAccumulator::ProcessBuffer()
+{
+    int num_parts = Env::GetNumPartitionsPerNode();
+    int num_records = 0;
+    while (GetRecord()) {
+        IndexEntry* p_record = static_cast<IndexEntry*>(mRecord);
+        int part_id = Env::GetPartitionId(p_record->mCksum);
+        mWriterPtrs[part_id % num_parts]->Put(*p_record);
+        num_records++;
+    }
+    LOG_DEBUG("processed " << num_records << " records");
+    Reset();
+}
 
 
 

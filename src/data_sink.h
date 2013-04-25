@@ -5,6 +5,7 @@
 #include "trace_types.h"
 #include "disk_io.h"
 #include <map>
+#include "partition_index.h"
 
 using namespace std;
 
@@ -64,6 +65,19 @@ private:
     map<int, RecordWriter<Block>*> mWriters;
 };
 
+
+// save new refs by partition
+class NewRefAccumulator : public DataSink
+{
+public:
+    NewRefAccumulator();
+    ~NewRefAccumulator();
+
+    void ProcessBuffer();
+
+private:
+    RecordWriter<IndexEntry>** mWriterPtrs;
+};
 
 #endif
 

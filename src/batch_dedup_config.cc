@@ -316,7 +316,7 @@ string Env::GetLocalIndexName(int partid)
 string Env::GetStep2InputName(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step2";
+    ss << mLocalPath << partid << ".step2.in";
     return ss.str();
 }
 
@@ -345,6 +345,20 @@ string Env::GetStep3InputName(int vmid)
 {
     stringstream ss;
     ss << mLocalPath << vmid << ".step3.in";
+    return ss.str();
+}
+
+string Env::GetStep3OutputName(int vmid)
+{
+    stringstream ss;
+    ss << mLocalPath << vmid << ".meta";
+    return ss.str();
+}
+
+string Env::GetStep4InputName(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step4.in";
     return ss.str();
 }
 

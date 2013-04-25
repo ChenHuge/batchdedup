@@ -115,6 +115,58 @@ bool NewBlockReader::GetRecord(DataRecord *&pdata)
 }
 
 
+NewRefReader::NewRefReader()
+{
+    mVmIdx = 0;
+    mInputPtr = NULL;
+}
+
+NewRefReader::~NewRefReader()
+{
+    if (mInputPtr != NULL) {
+        delete mInputPtr;
+    }
+}
+
+int NewRefReader::GetRecordSize()
+{
+    return mRecord.GetSize();
+}
+
+int NewRefReader::GetRecordDest(DataRecord* pdata)
+{
+    IndexEntry* pRecord = static_cast<IndexEntry*>(pdata);
+    return Env::GetDestNodeId(pRecord->mCksum);
+}
+
+bool NewRefReader::GetRecord(DataRecord*& pdata)
+{
+    while (true) {
+        // open an input
+        if (mInputPtr == NULL) {
+            int vmid = Env::GetVmId(mVmIdx);
+            if (vmid < 0) {
+                return false;
+            }
+            mVmIdx ++;
+            mInputPtr = new RecordReader<BlockMeta>(Env::GetStep3OutputName(vmid));
+        }
+
+        // read a block meta
+        BlockMeta bm;
+        while (mInputPtr->Get(bm)) {
+            mRecord.mCksum = bm.mBlk.mCksum;
+            mRecord.mRef = bm.mRef;
+            pdata = static_cast<DataRecord*>(&mRecord);
+            return true;
+        }
+
+        // end of input, close it
+        delete mInputPtr;
+        mInputPtr = NULL;
+    }
+}
+
 
 
 

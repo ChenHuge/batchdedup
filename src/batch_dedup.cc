@@ -151,6 +151,35 @@ int main(int argc, char** argv)
         delete p_accu;
     } while (0);
     
+    // local-3: write new blocks to storage
+    for (int i = 0; Env::GetVmId(i) >= 0; i++) {
+        int vmid = Env::GetVmId(i);
+        RecordReader<Block> input(Env::GetStep3InputName(vmid));
+        RecordWriter<BlockMeta> output(Env::GetStep3OutputName(vmid));
+        Block blk;
+        BlockMeta bm;
+        while (input.Get(blk)) {
+            bm.mBlk = blk;
+            bm.mRef = REF_VALID;
+            output.Put(bm);
+        }
+    }
+
+    // mpi-3: exchange new block ref
+    do {
+        MpiEngine* p_mpi = new MpiEngine();
+        NewRefReader* p_reader = new NewRefReader();
+        NewRefAccumulator* p_accu = new NewRefAccumulator();
+
+        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->Start();
+
+        delete p_mpi;
+        delete p_reader;
+        delete p_accu;
+    } while (0);
+
     // clean up
     delete[] send_buf;
     delete[] recv_buf;

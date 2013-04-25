@@ -97,6 +97,9 @@ public:
     static string GetStep2Output3Name(int partid);
 
     static string GetStep3InputName(int vmid);
+    static string GetStep3OutputName(int vmid);
+
+    static string GetStep4InputName(int partid);
 
     static string ToString();
 public:
