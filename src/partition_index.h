@@ -38,6 +38,8 @@ public:
 
     void FromFile(const string& fname);
     void ToFile(const string& fname);
+    
+    void AppendToFile(const string& fname);
 
     bool Find(const Checksum& cksum);
 };

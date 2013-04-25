@@ -180,6 +180,27 @@ int main(int argc, char** argv)
         delete p_accu;
     } while (0);
 
+    // local-4: update refs to pending blocks, then update partition index
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
+        PartitionIndex index;
+        index.FromFile(Env::GetStep4InputName(partid));
+        RecordReader<Block> input(Env::GetStep2Output2Name(partid));
+        RecordWriter<BlockMeta> output(Env::GetStep4OutputName(partid));
+        Block blk;
+        BlockMeta bm;
+        while (input.Get(blk)) {
+            if (index.Find(blk.mCksum)) {
+                bm.mBlk = blk;
+                bm.mRef = REF_VALID;
+                output.Put(bm);
+            }
+            else {
+                LOG_ERROR("cannot find the ref for a pending block");
+            }
+        }
+        index.AppendToFile(Env::GetLocalIndexName(partid));
+    }
+    
     // clean up
     delete[] send_buf;
     delete[] recv_buf;

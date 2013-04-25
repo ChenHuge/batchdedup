@@ -100,6 +100,7 @@ public:
     static string GetStep3OutputName(int vmid);
 
     static string GetStep4InputName(int partid);
+    static string GetStep4OutputName(int partid);
 
     static string ToString();
 public:

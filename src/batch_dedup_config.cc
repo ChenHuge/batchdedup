@@ -351,7 +351,7 @@ string Env::GetStep3InputName(int vmid)
 string Env::GetStep3OutputName(int vmid)
 {
     stringstream ss;
-    ss << mLocalPath << vmid << ".meta";
+    ss << mLocalPath << vmid << "." << mNumSnapshots << ".meta";
     return ss.str();
 }
 
@@ -359,6 +359,13 @@ string Env::GetStep4InputName(int partid)
 {
     stringstream ss;
     ss << mLocalPath << partid << ".step4.in";
+    return ss.str();
+}
+
+string Env::GetStep4OutputName(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step4.out";
     return ss.str();
 }
 

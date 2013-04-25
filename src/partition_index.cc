@@ -80,9 +80,16 @@ void PartitionIndex::FromFile(const string& fname)
 
 void PartitionIndex::ToFile(const string& fname)
 {
-    ofstream os(fname.c_str(), ios::out | ios::binary | ios::app);	// append or overwrite?
+    ofstream os(fname.c_str(), ios::out | ios::binary | ios::trunc);
     ToStream(os);
     os.close();
+}
+
+void PartitionIndex::AppendToFile(string const &fname)
+{
+    ofstream os(fname.c_str(), ios::out | ios::binary | ios::app);
+    ToStream(os);
+    os.close();    
 }
 
 bool PartitionIndex::Find(Checksum const &cksum)
