@@ -302,70 +302,70 @@ string Env::GetRemoteIndexName(int partid)
 {
     stringstream ss;
     int subdir = partid & 0xFF;
-    ss << mRemotePath << subdir << "/" << partid << ".index";
+    ss << mRemotePath << subdir << "/" << "partition." << partid << ".index";
     return ss.str();
 }
 
 string Env::GetLocalIndexName(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".index";
+    ss << mLocalPath << "partition." << partid << ".index";
     return ss.str();
 }
 
 string Env::GetStep2InputName(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step2.in";
+    ss << mLocalPath << "partition." << partid << ".step2.in";
     return ss.str();
 }
 
 string Env::GetStep2Output1Name(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step2.out1";
+    ss << mLocalPath << "partition." << partid << ".step2.out1";
     return ss.str();
 }
 
 string Env::GetStep2Output2Name(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step2.out2";
+    ss << mLocalPath << "partition." << partid << ".step2.out2";
     return ss.str();
 }
 
 string Env::GetStep2Output3Name(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step2.out3";
+    ss << mLocalPath << "partition." << partid << ".step2.out3";
     return ss.str();
 }
 
 string Env::GetStep3InputName(int vmid)
 {
     stringstream ss;
-    ss << mLocalPath << vmid << ".step3.in";
+    ss << mLocalPath << "vm." << vmid << ".step3.in";
     return ss.str();
 }
 
 string Env::GetStep3OutputName(int vmid)
 {
     stringstream ss;
-    ss << mLocalPath << vmid << "." << mNumSnapshots << ".meta";
+    ss << mLocalPath << "vm." << vmid << "." << mNumSnapshots << ".meta";
     return ss.str();
 }
 
 string Env::GetStep4InputName(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step4.in";
+    ss << mLocalPath << "partition." << partid << ".step4.in";
     return ss.str();
 }
 
-string Env::GetStep4OutputName(int partid)
+string Env::GetStep4OutputName(int vmid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step4.out";
+    ss << mLocalPath << "vm." << vmid << ".step4.out";
     return ss.str();
 }
 
