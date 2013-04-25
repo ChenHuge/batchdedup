@@ -91,17 +91,19 @@ int main(int argc, char** argv)
     }
     
     // mpi-1: exchange dirty segments
-    MpiEngine* p_step1 = new MpiEngine();
-    TraceReader* p_reader = new TraceReader();
-    RawRecordAccumulator* p_accu = new RawRecordAccumulator();
+    do {
+        MpiEngine* p_mpi = new MpiEngine();
+        TraceReader* p_reader = new TraceReader();
+        RawRecordAccumulator* p_accu = new RawRecordAccumulator();
 
-    p_step1->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
-    p_step1->SetDataSink(dynamic_cast<DataSink*>(p_accu));
-    p_step1->Start();
+        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->Start();
 
-    delete p_step1;
-    delete p_reader;
-    delete p_accu;
+        delete p_mpi;
+        delete p_reader;
+        delete p_accu;
+    } while(0);
     
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
@@ -134,6 +136,21 @@ int main(int argc, char** argv)
         }
     }    
 
+    // mpi-2: exchange new blocks
+    do {
+        MpiEngine* p_mpi = new MpiEngine();
+        NewBlockReader* p_reader = new NewBlockReader();
+        NewRecordAccumulator* p_accu = new NewRecordAccumulator();
+
+        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->Start();
+
+        delete p_mpi;
+        delete p_reader;
+        delete p_accu;
+    } while (0);
+    
     // clean up
     delete[] send_buf;
     delete[] recv_buf;

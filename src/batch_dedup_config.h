@@ -48,6 +48,7 @@ public:
 
     static void SetNumVms(int num);
     static int  GetNumVms();
+    static int  GetNumVmsPerNode();
 
     static void SetNumSnapshots(int num);
     static int  GetNumSnapshots();
@@ -85,13 +86,17 @@ public:
 
     static int    GetNumPartitionsPerNode();
     static int    GetPartitionId(const Checksum& cksum);
-    static int    GetNodeId(int partid);
-    static int    GetNodeId(const Checksum& cksum);
+    static int    GetDestNodeId(int partid);
+    static int    GetDestNodeId(const Checksum& cksum);
+
+    static int    GetSourceNodeId(int vmid);
 
     static string GetStep2InputName(int partid);
     static string GetStep2Output1Name(int partid);
     static string GetStep2Output2Name(int partid);
     static string GetStep2Output3Name(int partid);
+
+    static string GetStep3InputName(int vmid);
 
     static string ToString();
 public:

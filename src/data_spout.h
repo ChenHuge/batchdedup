@@ -3,6 +3,7 @@
 
 #include <fstream>
 #include "trace_types.h"
+#include "disk_io.h"
 
 using namespace std;
 
@@ -26,12 +27,16 @@ public:
 public:
     TraceReader();
 
+    // override
     ~TraceReader();
 
+    // override
     bool GetRecord(DataRecord*& pdata);
 
+    // override
     int GetRecordDest(DataRecord* pdata);
 
+    // override
     int GetRecordSize();
 
 private:
@@ -39,6 +44,31 @@ private:
     ifstream mInput;
     char* mReadBuf;
     int mVmIdx;
+};
+
+class NewBlockReader : public DataSpout
+{
+public:
+    Block mBlk;
+
+public:
+    NewBlockReader();
+
+    // override
+    ~NewBlockReader();
+
+    // override
+    bool GetRecord(DataRecord*& pdata);
+
+    // override
+    int GetRecordDest(DataRecord* pdata);
+
+    // override
+    int GetRecordSize();
+
+private:
+    RecordReader<Block>* mInputPtr;
+    int mPartId;
 };
 
 #endif

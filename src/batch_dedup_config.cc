@@ -341,19 +341,31 @@ string Env::GetStep2Output3Name(int partid)
     return ss.str();
 }
 
+string Env::GetStep3InputName(int vmid)
+{
+    stringstream ss;
+    ss << mLocalPath << vmid << ".step3.in";
+    return ss.str();
+}
+
 int Env::GetPartitionId(const Checksum& cksum)
 {
     return cksum.First4Bytes() % mNumPartitions;
 }
 
-int Env::GetNodeId(int partid)
+int Env::GetDestNodeId(int partid)
 {
     return partid / GetNumPartitionsPerNode();
 }
 
-int Env::GetNodeId(const Checksum& cksum)
+int Env::GetDestNodeId(const Checksum& cksum)
 {
-    return GetNodeId(GetPartitionId(cksum));
+    return GetDestNodeId(GetPartitionId(cksum));
+}
+
+int Env::GetSourceNodeId(int vmid)
+{
+    return vmid % mNumTasks;
 }
 
 string Env::ToString()

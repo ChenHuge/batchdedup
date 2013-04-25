@@ -80,6 +80,44 @@ void RawRecordAccumulator::ProcessBuffer()
 }
 
 
+NewRecordAccumulator::NewRecordAccumulator()
+{
+    mRecord = static_cast<DataRecord*>(new Block);
+    mRecordSize = mRecord->GetSize();
+    for (int i = 0; Env::GetVmId(i) >= 0; i++) {
+        int vmid = Env::GetVmId(i);
+        mWriters[vmid] = new RecordWriter<Block>(Env::GetStep3InputName(vmid));
+    }
+}
+
+NewRecordAccumulator::~NewRecordAccumulator()
+{
+    map<int, RecordWriter<Block>*>::iterator it;
+    for (it = mWriters.begin(); it != mWriters.end(); it++) {
+        delete it->second;
+    }
+}
+
+void NewRecordAccumulator::ProcessBuffer()
+{
+    int num_records = 0;
+    map<int, RecordWriter<Block>*>::iterator it;
+
+    while (GetRecord()) {
+        Block* pblk = static_cast<Block*>(mRecord);
+        it = mWriters.find(pblk->mFileID);
+        if (it == mWriters.end()) {
+            LOG_ERROR("this block does not belong to current node " << pblk->mFileID);
+        }
+        else {
+            it->second->Put(*pblk);
+            num_records++;
+        }
+    }
+    LOG_DEBUG("processed " << num_records << " records");
+    Reset();
+}
+
 
 
 

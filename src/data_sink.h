@@ -4,6 +4,7 @@
 #include <fstream>
 #include "trace_types.h"
 #include "disk_io.h"
+#include <map>
 
 using namespace std;
 
@@ -49,6 +50,20 @@ public:
 private:
     RecordWriter<Block>** mWriterPtrs;
 };
+
+// save new blocks by vm
+class NewRecordAccumulator : public DataSink
+{
+public:
+    NewRecordAccumulator();
+    ~NewRecordAccumulator();
+
+    void ProcessBuffer();
+
+private:
+    map<int, RecordWriter<Block>*> mWriters;
+};
+
 
 #endif
 

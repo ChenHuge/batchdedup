@@ -29,7 +29,7 @@ int TraceReader::GetRecordSize()
 int TraceReader::GetRecordDest(DataRecord* pdata)
 {
     Block* pblk = static_cast<Block*>(pdata);
-    return Env::GetNodeId(pblk->mCksum);
+    return Env::GetDestNodeId(pblk->mCksum);
 }
 
 // TODO: change to RecordReader
@@ -66,6 +66,53 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
 }
 
 
+NewBlockReader::NewBlockReader()
+{
+    mPartId = Env::GetPartitionBegin();
+    mInputPtr = NULL;
+}
+
+NewBlockReader::~NewBlockReader()
+{
+    if (mInputPtr != NULL) {
+        delete mInputPtr;
+    }
+}
+
+int NewBlockReader::GetRecordSize()
+{
+    return mBlk.GetSize();
+}
+
+int NewBlockReader::GetRecordDest(DataRecord* pdata)
+{
+    Block* pblk = static_cast<Block*>(pdata);
+    return Env::GetSourceNodeId(pblk->mFileID);	// send back to source
+}
+
+bool NewBlockReader::GetRecord(DataRecord *&pdata)
+{
+    while (true) {
+        // open step2 output3 of current partition
+        if (mInputPtr == NULL) {
+            if (mPartId >= Env::GetPartitionEnd()) {
+                return false;
+            }
+            mInputPtr = new RecordReader<Block>(Env::GetStep2Output3Name(mPartId));
+            mPartId ++;
+        }
+
+        // read one block
+        if (mInputPtr->Get(mBlk)) {
+            pdata =  static_cast<DataRecord*>(&mBlk);
+            return true;
+        }
+
+        // end of step2 output3 of current partition, close it
+        delete mInputPtr;
+        mInputPtr = NULL;
+    }
+}
 
 
 
