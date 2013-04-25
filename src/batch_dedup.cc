@@ -152,7 +152,7 @@ int main(int argc, char** argv)
     } while (0);
     
     // local-3: write new blocks to storage
-    for (int i = 0; Env::GetVmId(i) >= 0; i++) {
+    for (i = 0; Env::GetVmId(i) >= 0; i++) {
         int vmid = Env::GetVmId(i);
         RecordReader<Block> input(Env::GetStep3InputName(vmid));
         RecordWriter<BlockMeta> output(Env::GetStep3OutputName(vmid));
