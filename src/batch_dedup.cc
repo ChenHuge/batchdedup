@@ -13,6 +13,7 @@
 #include "partition_index.h"
 #include "dedup_buffer.h"
 #include "snapshot_meta.h"
+#include "timer.h"
 
 using namespace std;
 
@@ -71,6 +72,7 @@ int main(int argc, char** argv)
     Env::SetSendBuf(send_buf);
     Env::SetRecvBuf(recv_buf);
 
+    TimerPool::Start("PrepareTrace");
     // local-1: prepare traces, partition indices
     int i = 0;
     while (Env::GetVmId(i) >= 0) {
@@ -89,7 +91,9 @@ int main(int argc, char** argv)
         cmd << "cp " << remote_fname << " " << local_fname;
         system(cmd.str().c_str());
     }
-    
+    TimerPool::Stop("PrepareTrace");    
+
+    TimerPool::Start("ExchangeDirty");
     // mpi-1: exchange dirty segments
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -104,7 +108,9 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while(0);
-    
+    TimerPool::Stop("ExchangeDirty");
+
+    TimerPool::Start("DedupCompare");
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
@@ -135,7 +141,9 @@ int main(int argc, char** argv)
             output3.Put(blk);
         }
     }    
+    TimerPool::Stop("DedupCompare");
 
+    TimerPool::Start("ExchangeNewBlock");
     // mpi-2: exchange new blocks
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -150,7 +158,9 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    
+    TimerPool::Stop("ExchangeNewBlock");    
+
+    TimerPool::Start("WriteNewBlock");
     // local-3: write new blocks to storage
     for (i = 0; Env::GetVmId(i) >= 0; i++) {
         int vmid = Env::GetVmId(i);
@@ -164,7 +174,9 @@ int main(int argc, char** argv)
             output.Put(bm);
         }
     }
+    TimerPool::Stop("WriteNewBlock");
 
+    TimerPool::Start("ExchangeNewRef");
     // mpi-3: exchange new block ref
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -179,7 +191,9 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
+    TimerPool::Stop("ExchangeNewRef");
 
+    TimerPool::Start("UpdateNewRef");
     // local-4: update refs to pending blocks, then update partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
@@ -200,7 +214,9 @@ int main(int argc, char** argv)
         }
         index.AppendToFile(Env::GetLocalIndexName(partid));
     }
-    
+    TimerPool::Stop("UpdateNewRef");
+
+    TimerPool::Start("ExchangeDupBlocks");
     // mpi-4: exchange dup block meta
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -215,6 +231,9 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
+    TimerPool::Stop("ExchangeDupBlocks");
+
+    TimerPool::PrintAll();
 
     // clean up
     delete[] send_buf;
