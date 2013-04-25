@@ -81,15 +81,25 @@ void PartitionIndex::FromFile(const string& fname)
 void PartitionIndex::ToFile(const string& fname)
 {
     ofstream os(fname.c_str(), ios::out | ios::binary | ios::trunc);
-    ToStream(os);
-    os.close();
+    if (os.is_open()) {
+        ToStream(os);
+        os.close();
+    }
+    else {
+        LOG_ERROR("cannot open " << fname << " for write");
+    }
 }
 
 void PartitionIndex::AppendToFile(string const &fname)
 {
     ofstream os(fname.c_str(), ios::out | ios::binary | ios::app);
-    ToStream(os);
-    os.close();    
+    if (os.is_open()) {
+        ToStream(os);
+        os.close();    
+    }
+    else {
+        LOG_ERROR("cannot open " << fname << " for append");
+    }
 }
 
 bool PartitionIndex::Find(Checksum const &cksum)

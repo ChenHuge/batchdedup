@@ -98,5 +98,29 @@ private:
     int mVmIdx;
 };
 
+class DupBlockReader : public DataSpout
+{
+public:
+    BlockMeta mRecord;
+
+public:
+    DupBlockReader();
+
+    // override
+    ~DupBlockReader();
+
+    // override
+    bool GetRecord(DataRecord*& pdata);
+
+    // override
+    int GetRecordDest(DataRecord* pdata);
+
+    // override
+    int GetRecordSize();
+
+private:
+    RecordReader<BlockMeta>* mInputPtr;
+    int mPartId;
+};
 
 #endif

@@ -157,6 +157,43 @@ void NewRefAccumulator::ProcessBuffer()
 }
 
 
+DupRecordAccumulator::DupRecordAccumulator()
+{
+    mRecord = static_cast<DataRecord*>(new BlockMeta);
+    mRecordSize = mRecord->GetSize();
+    for (int i = 0; Env::GetVmId(i) >= 0; i++) {
+        int vmid = Env::GetVmId(i);
+        mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep3OutputName(vmid), true);
+    }
+}
+
+DupRecordAccumulator::~DupRecordAccumulator()
+{
+    map<int, RecordWriter<BlockMeta>*>::iterator it;
+    for (it = mWriters.begin(); it != mWriters.end(); it++) {
+        delete it->second;
+    }
+}
+
+void DupRecordAccumulator::ProcessBuffer()
+{
+    int num_records = 0;
+    map<int, RecordWriter<BlockMeta>*>::iterator it;
+
+    while (GetRecord()) {
+        BlockMeta* p_record = static_cast<BlockMeta*>(mRecord);
+        it = mWriters.find(p_record->mBlk.mFileID);
+        if (it == mWriters.end()) {
+            LOG_ERROR("this block does not belong to current node " << p_record->mBlk.mFileID);
+        }
+        else {
+            it->second->Put(*p_record);
+            num_records++;
+        }
+    }
+    LOG_DEBUG("processed " << num_records << " records");
+    Reset();
+}
 
 
 

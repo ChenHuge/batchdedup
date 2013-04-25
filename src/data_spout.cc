@@ -168,6 +168,53 @@ bool NewRefReader::GetRecord(DataRecord*& pdata)
 }
 
 
+DupBlockReader::DupBlockReader()
+{
+    mPartId = Env::GetPartitionBegin();
+    mInputPtr = NULL;
+}
+
+DupBlockReader::~DupBlockReader()
+{
+    if (mInputPtr != NULL) {
+        delete mInputPtr;
+    }
+}
+
+int DupBlockReader::GetRecordSize()
+{
+    return mRecord.GetSize();
+}
+
+int DupBlockReader::GetRecordDest(DataRecord* pdata)
+{
+    BlockMeta* p_record = static_cast<BlockMeta*>(pdata);
+    return Env::GetSourceNodeId(p_record->mBlk.mFileID);	// send back to source
+}
+
+bool DupBlockReader::GetRecord(DataRecord *&pdata)
+{
+    while (true) {
+        // open step2 output3 of current partition
+        if (mInputPtr == NULL) {
+            if (mPartId >= Env::GetPartitionEnd()) {
+                return false;
+            }
+            mInputPtr = new RecordReader<BlockMeta>(Env::GetStep2Output1Name(mPartId));
+            mPartId ++;
+        }
+
+        // read one block
+        if (mInputPtr->Get(mRecord)) {
+            pdata =  static_cast<DataRecord*>(&mRecord);
+            return true;
+        }
+
+        // end of step2 output1 of current partition, close it
+        delete mInputPtr;
+        mInputPtr = NULL;
+    }
+}
 
 
 

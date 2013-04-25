@@ -79,6 +79,20 @@ private:
     RecordWriter<IndexEntry>** mWriterPtrs;
 };
 
+// save dup block meta by vm
+class DupRecordAccumulator : public DataSink
+{
+public:
+    DupRecordAccumulator();
+    ~DupRecordAccumulator();
+
+    void ProcessBuffer();
+
+private:
+    map<int, RecordWriter<BlockMeta>*> mWriters;
+};
+
+
 #endif
 
 

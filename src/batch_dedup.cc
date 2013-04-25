@@ -185,7 +185,7 @@ int main(int argc, char** argv)
         PartitionIndex index;
         index.FromFile(Env::GetStep4InputName(partid));
         RecordReader<Block> input(Env::GetStep2Output2Name(partid));
-        RecordWriter<BlockMeta> output(Env::GetStep4OutputName(partid));
+        RecordWriter<BlockMeta> output(Env::GetStep2Output1Name(partid), true);
         Block blk;
         BlockMeta bm;
         while (input.Get(blk)) {
@@ -201,6 +201,21 @@ int main(int argc, char** argv)
         index.AppendToFile(Env::GetLocalIndexName(partid));
     }
     
+    // mpi-4: exchange dup block meta
+    do {
+        MpiEngine* p_mpi = new MpiEngine();
+        DupBlockReader* p_reader = new DupBlockReader();
+        DupRecordAccumulator* p_accu = new DupRecordAccumulator();
+
+        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->Start();
+
+        delete p_mpi;
+        delete p_reader;
+        delete p_accu;
+    } while (0);
+
     // clean up
     delete[] send_buf;
     delete[] recv_buf;
