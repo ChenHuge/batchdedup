@@ -75,7 +75,7 @@ void PartitionIndex::FromFile(const string& fname)
     mIndex.reserve(sz);
     FromStream(is);
     is.close();
-    LOG_DEBUG("loaded " << mIndex.size() " items from " << fname);
+    LOG_DEBUG("loaded " << mIndex.size() << " items from " << fname);
 }
 
 void PartitionIndex::ToFile(const string& fname)
