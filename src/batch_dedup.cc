@@ -91,7 +91,7 @@ int main(int argc, char** argv)
         cmd << "cp " << remote_fname << " " << local_fname;
         system(cmd.str().c_str());
     }
-    TimerPool::Stop("PrepareTrace");    
+    TimerPool::Print("PrepareTrace");    
 
     TimerPool::Start("ExchangeDirty");
     // mpi-1: exchange dirty segments
@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while(0);
-    TimerPool::Stop("ExchangeDirty");
+    TimerPool::Print("ExchangeDirty");
 
     TimerPool::Start("DedupCompare");
     // local-2: compare with partition index
@@ -141,7 +141,7 @@ int main(int argc, char** argv)
             output3.Put(blk);
         }
     }    
-    TimerPool::Stop("DedupCompare");
+    TimerPool::Print("DedupCompare");
 
     TimerPool::Start("ExchangeNewBlock");
     // mpi-2: exchange new blocks
@@ -158,7 +158,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeNewBlock");    
+    TimerPool::Print("ExchangeNewBlock");    
 
     TimerPool::Start("WriteNewBlock");
     // local-3: write new blocks to storage
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
             output.Put(bm);
         }
     }
-    TimerPool::Stop("WriteNewBlock");
+    TimerPool::Print("WriteNewBlock");
 
     TimerPool::Start("ExchangeNewRef");
     // mpi-3: exchange new block ref
@@ -191,7 +191,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeNewRef");
+    TimerPool::Print("ExchangeNewRef");
 
     TimerPool::Start("UpdateNewRef");
     // local-4: update refs to pending blocks, then update partition index
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
         }
         index.AppendToFile(Env::GetLocalIndexName(partid));
     }
-    TimerPool::Stop("UpdateNewRef");
+    TimerPool::Print("UpdateNewRef");
 
     TimerPool::Start("ExchangeDupBlocks");
     // mpi-4: exchange dup block meta
@@ -231,7 +231,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeDupBlocks");
+    TimerPool::Print("ExchangeDupBlocks");
 
     TimerPool::PrintAll();
 
