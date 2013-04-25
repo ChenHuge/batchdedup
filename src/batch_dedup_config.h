@@ -88,7 +88,10 @@ public:
     static int    GetNodeId(int partid);
     static int    GetNodeId(const Checksum& cksum);
 
-    static string GetStep1Name(int partid);
+    static string GetStep2InputName(int partid);
+    static string GetStep2Output1Name(int partid);
+    static string GetStep2Output2Name(int partid);
+    static string GetStep2Output3Name(int partid);
 
     static string ToString();
 public:

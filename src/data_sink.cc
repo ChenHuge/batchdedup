@@ -51,7 +51,7 @@ RawRecordAccumulator::RawRecordAccumulator()
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); ++partid)
     {
         mWriterPtrs[partid % num_parts] = 
-            new RecordWriter<Block>(Env::GetStep1Name(partid));
+            new RecordWriter<Block>(Env::GetStep2InputName(partid));
     }
 }
 

@@ -10,6 +10,9 @@
 #include "batch_dedup_config.h"
 #include "mpi_engine.h"
 #include "snapshot_mixer.h"
+#include "partition_index.h"
+#include "dedup_buffer.h"
+#include "snapshot_meta.h"
 
 using namespace std;
 
@@ -47,10 +50,11 @@ void final()
     stringstream ss;
     ss << "cp -r " << Env::GetLocalPath() << "* " << Env::GetRemotePath();
     system(ss.str().c_str());
-    ss.clear();
-    ss.str("");
-    ss << "rm -rf " << Env::GetLocalPath();
-    system(ss.str().c_str());
+    //ss.clear();
+    //ss.str("");
+
+    Env::RemoveLocalPath();
+    Env::CloseLogger();
 }
 
 int main(int argc, char** argv)
@@ -99,12 +103,42 @@ int main(int argc, char** argv)
     delete p_reader;
     delete p_accu;
     
+    // local-2: compare with partition index
+    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
+        PartitionIndex index;
+        index.FromFile(Env::GetLocalIndexName(partid));
+        RecordReader<Block> reader(Env::GetStep2InputName(partid));
+        Block blk;
+        BlockMeta bm;
+        DedupBuffer buf;
+        RecordWriter<BlockMeta> output1(Env::GetStep2Output1Name(partid));
+        RecordWriter<Block> output2(Env::GetStep2Output2Name(partid));
+        RecordWriter<Block> output3(Env::GetStep2Output3Name(partid));
+
+        while(reader.Get(blk)) {
+            // dup with existing blocks?
+            if (index.Find(blk.mCksum)) {
+                bm.mBlk = blk;
+                bm.mRef = REF_VALID;
+                output1.Put(bm);
+                continue;
+            }
+            // dup with new blocks in this run?
+            if (buf.Find(blk)) {
+                output2.Put(blk);
+                continue;
+            }
+            // completely new
+            buf.Add(blk);
+            output3.Put(blk);
+        }
+    }    
+
+    // clean up
     delete[] send_buf;
     delete[] recv_buf;
-    MPI_Finalize();
     final();
-    Env::RemoveLocalPath();
-    Env::CloseLogger();
+    MPI_Finalize();
     return 0;
 }
 

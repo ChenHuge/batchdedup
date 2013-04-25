@@ -313,10 +313,31 @@ string Env::GetLocalIndexName(int partid)
     return ss.str();
 }
 
-string Env::GetStep1Name(int partid)
+string Env::GetStep2InputName(int partid)
 {
     stringstream ss;
-    ss << mLocalPath << partid << ".step1";
+    ss << mLocalPath << partid << ".step2";
+    return ss.str();
+}
+
+string Env::GetStep2Output1Name(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step2.out1";
+    return ss.str();
+}
+
+string Env::GetStep2Output2Name(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step2.out2";
+    return ss.str();
+}
+
+string Env::GetStep2Output3Name(int partid)
+{
+    stringstream ss;
+    ss << mLocalPath << partid << ".step2.out3";
     return ss.str();
 }
 

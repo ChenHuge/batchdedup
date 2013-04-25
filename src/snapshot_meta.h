@@ -8,10 +8,10 @@ using namespace std;
 
 struct DataRef;
 
-extern const DataRef  INVALID_REF;
-extern const DataRef  EMPTY_REF;
-extern const DataRef  VALID_REF;
-extern const DataRef  FOUND_REF;
+extern const DataRef  REF_INVALID;
+extern const DataRef  REF_EMPTY;
+extern const DataRef  REF_VALID;
+extern const DataRef  REF_FOUND;
 
 struct DataRef
 {

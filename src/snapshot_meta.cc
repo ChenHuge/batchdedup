@@ -1,10 +1,10 @@
 #include "snapshot_meta.h"
 #include "string.h"
 
-const DataRef INVALID_REF(0xFFFFFFFFFFFFFFFF);
-const DataRef EMPTY_REF(0xAAAAAAAAAAAAAAAA);
-const DataRef VALID_REF(0xBBBBBBBBBBBBBBBB);
-const DataRef FOUND_REF(0xCCCCCCCCCCCCCCCC);
+const DataRef REF_INVALID(0xFFFFFFFFFFFFFFFF);
+const DataRef REF_EMPTY(0xAAAAAAAAAAAAAAAA);
+const DataRef REF_VALID(0xBBBBBBBBBBBBBBBB);
+const DataRef REF_FOUND(0xCCCCCCCCCCCCCCCC);
 
 DataRef::DataRef() 
 {
