@@ -64,6 +64,10 @@ void PartitionIndex::ToStream(ostream &os)
 void PartitionIndex::FromFile(const string& fname)
 {
     ifstream is(fname.c_str(), ios::in | ios::binary);
+    if (!is.is_open()) {
+        LOG_DEBUG("can not open " << fname << ", partition index is set to empty");
+        return;
+    }
     is.seekg(0, is.end);
     size_t len = is.tellg();
     is.seekg(0, is.beg);
@@ -71,6 +75,7 @@ void PartitionIndex::FromFile(const string& fname)
     mIndex.reserve(sz);
     FromStream(is);
     is.close();
+    LOG_DEBUG("loaded " << mIndex.size() " items from " << fname);
 }
 
 void PartitionIndex::ToFile(const string& fname)
