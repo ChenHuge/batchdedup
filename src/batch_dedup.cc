@@ -200,7 +200,7 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeNewRefs");
 
-    TimerPool::Start("UpdateIndex");
+    TimerPool::Start("UpdateRefAndIndex");
     // local-4: update refs to pending blocks, then update partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
@@ -221,7 +221,7 @@ int main(int argc, char** argv)
         }
         index.AppendToFile(Env::GetLocalIndexName(partid));
     }
-    TimerPool::Stop("Updateindex");
+    TimerPool::Stop("UpdateRefAndIndex");
 
     TimerPool::Start("ExchangeDupBlocks");
     // mpi-4: exchange dup block meta
