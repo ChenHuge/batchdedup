@@ -198,7 +198,6 @@ void Env::SetRemotePath(string const &path)
     stringstream ss;
     ss << path << "/" << mNumPartitions << "/";
     mRemotePath = ss.str();
-    CreateDir(mRemotePath);
 }
 
 string Env::GetRemotePath()
@@ -216,8 +215,6 @@ void Env::CopyToRemote(const string& fname)
 void Env::SetHomePath(string const &path)
 {
     mHomePath = path + "/" + Env::GetTaskName() + "/";
-    CreateDir(path);
-    CreateDir(mHomePath);
 }
 
 string Env::GetHomePath()
@@ -236,6 +233,13 @@ string Env::GetTaskName()
        << "_" << mReadBufSize
        << "_" << mWriteBufSize;
     return ss.str();
+}
+
+void Env::InitDirs()
+{
+    CreateDir("/home/wei-ucsb/batchdedup/");
+    CreateDir(mRemotePath);
+    Createdir(mHomePath);
 }
 
 void Env::CreateDir(string const &path, bool empty)

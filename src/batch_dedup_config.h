@@ -76,6 +76,7 @@ public:
 
     static string GetTaskName();
 
+    static void   InitDirs();
     static void   CreateDir(const string& path, bool empty = false);
 
     static int    GetPartitionBegin();
