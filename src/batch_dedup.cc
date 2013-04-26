@@ -53,7 +53,11 @@ void init(int argc, char** argv)
 void final()
 {
     stringstream ss;
+#ifdef DEBUG
+    ss << "cp -r " << Env::GetLocalPath() << "* " << Env::GetRemotePath();
+#else
     ss << "cp -r " << Env::GetLocalPath() << "*.index " << Env::GetRemotePath();
+#endif
     system(ss.str().c_str());
     //ss.clear();
     //ss.str("");
