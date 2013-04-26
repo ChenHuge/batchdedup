@@ -239,7 +239,7 @@ void Env::InitDirs()
 {
     CreateDir("/home/wei-ucsb/batchdedup/");
     CreateDir(mRemotePath);
-    Createdir(mHomePath);
+    CreateDir(mHomePath);
 }
 
 void Env::CreateDir(string const &path, bool empty)
