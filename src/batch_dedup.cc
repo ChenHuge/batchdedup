@@ -244,6 +244,17 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeDupBlocks");
 
+    TimerPool::Start("UploadIndex");
+    for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
+        string remote_fname = Env::GetRemoteIndexName(i);
+        string local_fname = Env::GetLocalIndexName(i);
+        stringstream cmd;
+        cmd << "cp " << local_fname << " " << remote_fname;
+        system(cmd.str().c_str());
+    }
+    TimerPool::Stop("UploadIndex");
+
+
     TimerPool::PrintAll();
 
     // clean up
