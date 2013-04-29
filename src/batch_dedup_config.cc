@@ -5,8 +5,8 @@
 
 const double   VM_SEG_CHANGE_RATE   = 0.5;
 const double   VM_BLOCK_CHANGE_RATE = 0.5;
-const double   SS_SEG_CHANGE_RATE   = 0.2;
-const double   SS_BLOCK_CHANGE_RATE = 0.5;
+const double   SS_SEG_CHANGE_RATE   = 0.22;
+const double   SS_BLOCK_CHANGE_RATE = 0.255;
 const int      MAX_NUM_SNAPSHOTS    = 100;
 const uint16_t BLOCK_CLEAN_FLAG     = 0;
 const uint16_t BLOCK_DIRTY_FLAG     = 1;
@@ -420,7 +420,15 @@ string Env::ToString()
     return ss.str();
 }
 
+void Env::AddPartitionSize(size_t len)
+{
+    mIndexSize += len;
+}
 
+void Env::StatPartitionIndexSize()
+{
+    LOG_INFO("average partition index size: " << mIndexSize / GetNumPartitionsPerNode());
+}
 
 
 

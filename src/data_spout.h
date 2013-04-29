@@ -46,6 +46,8 @@ private:
     ifstream mInput;
     char* mReadBuf;
     int mVmIdx;
+    uint64_t mStatTotalSize;
+    uint64_t mStatDirtySize;
 };
 
 class NewBlockReader : public DataSpout
@@ -96,6 +98,7 @@ public:
 private:
     RecordReader<BlockMeta>* mInputPtr;
     int mVmIdx;
+    uint64_t mStatNewSize;
 };
 
 class DupBlockReader : public DataSpout

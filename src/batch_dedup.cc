@@ -149,6 +149,7 @@ int main(int argc, char** argv)
         }
     }    
     TimerPool::Stop("DedupComparison");
+    Env::StatPartitionIndexSize();
 
     TimerPool::Start("ExchangeNewBlocks");
     // mpi-2: exchange new blocks

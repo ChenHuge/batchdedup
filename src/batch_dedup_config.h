@@ -104,6 +104,10 @@ public:
     static string GetStep4OutputName(int partid);
 
     static string ToString();
+
+    static void   AddPartitionSize(size_t len);
+    static void   StatPartitionIndexSize();
+
 public:
     static ofstream mLogger;
 
@@ -123,6 +127,7 @@ private:
     static string         mLocalPath; // path to local storage
     static string         mRemotePath; // path to remote storage (lustre)
     static string         mHomePath; // path to home directory
+    static size_t         mIndexSize;
 };
 
 #define LOG_ERROR(msg)	\

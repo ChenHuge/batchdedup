@@ -70,6 +70,7 @@ void PartitionIndex::FromFile(const string& fname)
     }
     is.seekg(0, is.end);
     size_t len = is.tellg();
+    Env::AddPartitionIndexSize(len);
     is.seekg(0, is.beg);
     size_t sz = len / (sizeof(Checksum) + sizeof(DataRef));
     mIndex.reserve(sz);

@@ -12,6 +12,8 @@ TraceReader::TraceReader()
     mNumTasks = Env::GetNumTasks();
     mReadBuf = new char[Env::GetReadBufSize()];
     mInput.rdbuf()->pubsetbuf(mReadBuf, Env::GetReadBufSize());
+    mStatTotalSize = 0;
+    mStatDirtySize = 0;
 }
 
 TraceReader::~TraceReader()
@@ -19,6 +21,7 @@ TraceReader::~TraceReader()
     if (mInput.is_open())
         mInput.close();
     delete[] mReadBuf;
+    LOG_INFO("total VM size: " << mStatTotalSize << ", dirty segment size: " << mStatDirtySize);
 }
 
 int TraceReader::GetRecordSize()
@@ -54,7 +57,9 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
 
         // find a dirty block
         while (mBlk.FromStream(mInput)) {
+            mStatTotalSize += mBlk.mSize;
             if (mBlk.mFlags & BLOCK_DIRTY_FLAG) {
+                mStatDirtySize += mBlk.mSize;
                 pdata = static_cast<DataRecord*>(&mBlk);
                 return true;
             }
@@ -119,6 +124,7 @@ NewRefReader::NewRefReader()
 {
     mVmIdx = 0;
     mInputPtr = NULL;
+    mStatNewSize = 0;
 }
 
 NewRefReader::~NewRefReader()
@@ -126,6 +132,7 @@ NewRefReader::~NewRefReader()
     if (mInputPtr != NULL) {
         delete mInputPtr;
     }
+    LOG_INFO("new block size: " << mStatNewSize);
 }
 
 int NewRefReader::GetRecordSize()
@@ -155,6 +162,7 @@ bool NewRefReader::GetRecord(DataRecord*& pdata)
         // read a block meta
         BlockMeta bm;
         while (mInputPtr->Get(bm)) {
+            mStatNewSize += bm.mBlk.mSize;
             mRecord.mCksum = bm.mBlk.mCksum;
             mRecord.mRef = bm.mRef;
             pdata = static_cast<DataRecord*>(&mRecord);
