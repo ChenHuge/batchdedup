@@ -19,7 +19,7 @@ using namespace std;
 
 void usage(char* progname)
 {
-    cout << "Usage: " << progname << " num_partitions num_VMs num_snapshots mpi_buffer read_buffer write_buffer" << endl;
+    cout << "Usage: " << progname << " total_num_partitions total_num_VMs num_snapshots mpi_buffer read_buffer write_buffer" << endl;
     return;
 }
 
