@@ -80,7 +80,7 @@ bool SnapshotMixer::Generate()
 
     is.close();
     os.close();
-    LOG_DEBUG(mOutputFile << "is generated from " << mInputFile);
+    LOG_DEBUG(mOutputFile << " is generated from " << mInputFile);
     return true;
 }
 
