@@ -428,7 +428,7 @@ void Env::AddPartitionIndexSize(size_t len)
 
 void Env::StatPartitionIndexSize()
 {
-    LOG_INFO("average partition index size: " << mIndexSize / GetNumPartitionsPerNode());
+    LOG_INFO("average partition index size: " << (mIndexSize / GetNumPartitionsPerNode()));
 }
 
 
