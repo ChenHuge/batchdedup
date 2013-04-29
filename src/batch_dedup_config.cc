@@ -27,6 +27,7 @@ string         Env::mLocalPath; // path to local storage
 string         Env::mRemotePath; // path to remote storage (lustre)
 string         Env::mHomePath; // path to home directory
 ofstream       Env::mLogger;
+size_t         Env::mIndexSize = 0;
 
 void Env::SetRank(int rank) 
 { 
