@@ -75,7 +75,7 @@ bool SnapshotMixer::Generate()
 
     is.close();
     os.close();
-    LOG_INFO("trace generated: " << mOutputFile);
+    LOG_DEBUG("trace generated: " << mOutputFile);
     return true;
 }
 
