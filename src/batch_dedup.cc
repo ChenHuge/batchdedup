@@ -69,6 +69,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
+    TimerPool::Start("Total");
     init(argc, argv);
     // cannot allocate 2d array because MPI only accepts one continous buffer
     char* send_buf  = new char[Env::GetNumTasks() * Env::GetMpiBufSize()];
@@ -260,7 +261,7 @@ int main(int argc, char** argv)
         system(cmd.str().c_str());
     }
     TimerPool::Stop("UploadIndex");
-
+    TimerPool::Stop("Total");
 
     TimerPool::PrintAll();
 
