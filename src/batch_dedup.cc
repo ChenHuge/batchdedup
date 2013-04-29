@@ -76,6 +76,7 @@ int main(int argc, char** argv)
     Env::SetSendBuf(send_buf);
     Env::SetRecvBuf(recv_buf);
 
+    LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
     // local-1: prepare traces, partition indices
     int i = 0;
@@ -90,6 +91,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("PrepareTrace");    
 
+    LOG_INFO("loading partition index from lustre");
     TimerPool::Start("LoadIndex");
     for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
         string remote_fname = Env::GetRemoteIndexName(i);
@@ -100,6 +102,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("LoadIndex");
 
+    LOG_INFO("exchanging dirty blocks");
     TimerPool::Start("ExchangeDirtyBlocks");
     // mpi-1: exchange dirty segments
     do {
@@ -117,6 +120,7 @@ int main(int argc, char** argv)
     } while(0);
     TimerPool::Stop("ExchangeDirtyBlocks");
 
+    LOG_INFO("making dedup comparison");
     TimerPool::Start("DedupComparison");
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
@@ -151,6 +155,7 @@ int main(int argc, char** argv)
     TimerPool::Stop("DedupComparison");
     Env::StatPartitionIndexSize();
 
+    LOG_INFO("exchange new blocks");
     TimerPool::Start("ExchangeNewBlocks");
     // mpi-2: exchange new blocks
     do {
@@ -168,6 +173,7 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeNewBlocks");    
 
+    LOG_INFO("writing new blocks to backup storage");
     TimerPool::Start("WriteNewBlocks");
     // local-3: write new blocks to storage
     for (i = 0; Env::GetVmId(i) >= 0; i++) {
@@ -184,6 +190,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("WriteNewBlocks");
 
+    LOG_INFO("exchanging data reference of new blocks");
     TimerPool::Start("ExchangeNewRefs");
     // mpi-3: exchange new block ref
     do {
@@ -201,6 +208,7 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeNewRefs");
 
+    LOG_INFO("updating partition index and dup_new block references");
     TimerPool::Start("UpdateRefAndIndex");
     // local-4: update refs to pending blocks, then update partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
@@ -224,6 +232,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("UpdateRefAndIndex");
 
+    LOG_INFO("exchanging dup blocks");
     TimerPool::Start("ExchangeDupBlocks");
     // mpi-4: exchange dup block meta
     do {
@@ -241,6 +250,7 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeDupBlocks");
 
+    LOG_INFO("uploading partition index to lustre");
     TimerPool::Start("UploadIndex");
     for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
         string remote_fname = Env::GetRemoteIndexName(i);
