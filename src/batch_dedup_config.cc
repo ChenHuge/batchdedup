@@ -127,6 +127,9 @@ void Env::LoadSampleTraceList(string fname)
     string trace_fname("");
     while (is.good()) {
         getline(is, trace_fname);
+        if(trace_fname.length() == 0) {
+            continue;
+        }
         mSampleTraces.push_back(trace_fname);
         LOG_DEBUG("add trace file: " << trace_fname);
     }
