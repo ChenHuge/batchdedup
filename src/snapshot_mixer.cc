@@ -18,7 +18,12 @@ bool SnapshotMixer::Generate()
 {
     ifstream is(mInputFile.c_str(), ios::in | ios::binary);
     ofstream os(mOutputFile.c_str(), ios::out | ios::binary | ios::trunc);
-    if (!is.is_open() || !os.is_open()) {
+    if (!is.is_open()) {
+        LOG_ERROR("cannot open input: " << mInputFile);
+        return false;
+    }
+    if (!os.is_open()) {
+        LOG_ERROR("cannot open output: " << mOutputFile);
         return false;
     }
     
@@ -75,7 +80,7 @@ bool SnapshotMixer::Generate()
 
     is.close();
     os.close();
-    LOG_DEBUG("trace generated: " << mOutputFile);
+    LOG_DEBUG(mOutputFile << "is generated from " << mInputFile);
     return true;
 }
 

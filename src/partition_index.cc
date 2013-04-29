@@ -68,7 +68,7 @@ void PartitionIndex::FromFile(const string& fname)
         LOG_DEBUG("can not open " << fname << ", partition index is set to empty");
         return;
     }
-    is.seekg(0, is.end);
+    is.seekg(0, ios::end);
     size_t len = is.tellg();
     Env::AddPartitionIndexSize(len);
     is.seekg(0, is.beg);
