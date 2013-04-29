@@ -112,7 +112,7 @@ void MpiEngine::Start()
         }
 
         if (finished) {
-            LOG_INFO("nobody has data to send, stop");
+            LOG_DEBUG("nobody has data to send, stop");
             break;
         }
     }
