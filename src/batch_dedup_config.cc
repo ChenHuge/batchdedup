@@ -420,7 +420,7 @@ string Env::ToString()
     return ss.str();
 }
 
-void Env::AddPartitionSize(size_t len)
+void Env::AddPartitionIndexSize(size_t len)
 {
     mIndexSize += len;
 }

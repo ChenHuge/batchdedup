@@ -105,7 +105,7 @@ public:
 
     static string ToString();
 
-    static void   AddPartitionSize(size_t len);
+    static void   AddPartitionIndexSize(size_t len);
     static void   StatPartitionIndexSize();
 
 public:
