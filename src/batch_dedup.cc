@@ -14,6 +14,7 @@
 #include "dedup_buffer.h"
 #include "snapshot_meta.h"
 #include "timer.h"
+#include "unistd.h"
 
 using namespace std;
 
@@ -76,6 +77,9 @@ int main(int argc, char** argv)
     char* recv_buf  = new char[Env::GetNumTasks() * Env::GetMpiBufSize()];
     Env::SetSendBuf(send_buf);
     Env::SetRecvBuf(recv_buf);
+
+    // avoid too many concurrent access to lustre
+    sleep(2 * Env::GetRank());
 
     LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
