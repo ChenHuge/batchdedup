@@ -57,7 +57,7 @@ public:
           mFileName(fname)
     {
         mBuffer = new char[Env::GetWriteBufSize()];
-        mOutput.rdbuf()->pubsetbuf(mBuffer, Env::GetReadBufSize());
+        mOutput.rdbuf()->pubsetbuf(mBuffer, Env::GetWriteBufSize());
         if (append) {
             mOutput.open(mFileName.c_str(), ios::out | ios::binary | ios::app);
         }
