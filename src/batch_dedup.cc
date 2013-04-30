@@ -120,7 +120,7 @@ int main(int argc, char** argv)
         delete p_accu;
     } while(0);
     TimerPool::Stop("ExchangeDirtyBlocks");
-
+    /*
     LOG_INFO("making dedup comparison");
     TimerPool::Start("DedupComparison");
     // local-2: compare with partition index
@@ -261,8 +261,8 @@ int main(int argc, char** argv)
         system(cmd.str().c_str());
     }
     TimerPool::Stop("UploadIndex");
+    */
     TimerPool::Stop("Total");
-
     TimerPool::PrintAll();
 
     // clean up
