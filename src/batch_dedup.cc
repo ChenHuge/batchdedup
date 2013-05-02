@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     Env::SetRecvBuf(recv_buf);
 
     // avoid too many concurrent access to lustre
-    sleep(5 * Env::GetRank());
+    sleep(2 * Env::GetRank());
 
     LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
