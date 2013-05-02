@@ -272,7 +272,7 @@ int main(int argc, char** argv)
 
     get_usage(mypid, &end);
     double user_usage, system_usage;
-    calc_cpu_usage_pct(&begin, &end, &user_usage, &system_usage);
+    calc_cpu_usage_pct(&end, &begin, &user_usage, &system_usage);
     LOG_INFO("cpu usage %: user " << user_usage << ", system " << system_usage);
 
     sleep(1 * Env::GetRank());
