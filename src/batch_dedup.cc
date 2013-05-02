@@ -15,7 +15,7 @@
 #include "snapshot_meta.h"
 #include "timer.h"
 #include "unistd.h"
-#include "cpu_usage.h""
+#include "cpu_usage.h"
 
 using namespace std;
 
