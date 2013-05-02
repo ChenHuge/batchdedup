@@ -15,6 +15,7 @@
 #include "snapshot_meta.h"
 #include "timer.h"
 #include "unistd.h"
+#include "cpu_usage.h""
 
 using namespace std;
 
@@ -116,6 +117,11 @@ int main(int argc, char** argv)
     TimerPool::Stop("LoadIndex");
 
     MPI_Barrier(MPI_COMM_WORLD);	// sync the progress before taking measurement
+
+    struct pstat begin, end;
+    pid_t mypid = getpid();
+    get_usage(mypid, &begin);
+
     LOG_INFO("exchanging dirty blocks");
     TimerPool::Start("ExchangeDirtyBlocks");
     // mpi-1: exchange dirty segments
@@ -263,6 +269,11 @@ int main(int argc, char** argv)
         delete p_accu;
     } while (0);
     TimerPool::Stop("ExchangeDupBlocks");
+
+    get_usage(mypid, &end);
+    double user_usage, system_usage;
+    calc_cpu_usage_pct(&begin, &end, &user_usage, &system_usage);
+    LOG_INFO("cpu usage %: user " << user_usage << ", system " << system_usage);
 
     sleep(1 * Env::GetRank());
     LOG_INFO("uploading partition index to lustre");
