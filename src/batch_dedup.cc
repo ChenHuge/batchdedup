@@ -85,7 +85,7 @@ int main(int argc, char** argv)
     Env::SetRecvBuf(recv_buf);
 
     // avoid too many concurrent access to lustre
-    sleep(2 * Env::GetRank());
+    sleep(1 * Env::GetRank());
 
     LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
         delete p_accu;
     } while(0);
     TimerPool::Stop("ExchangeDirtyBlocks");
-    /*
+
     LOG_INFO("making dedup comparison");
     TimerPool::Start("DedupComparison");
     // local-2: compare with partition index
@@ -264,6 +264,7 @@ int main(int argc, char** argv)
     } while (0);
     TimerPool::Stop("ExchangeDupBlocks");
 
+    sleep(1 * Env::GetRank());
     LOG_INFO("uploading partition index to lustre");
     TimerPool::Start("UploadIndex");
     for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
@@ -274,7 +275,7 @@ int main(int argc, char** argv)
         system(cmd.str().c_str());
     }
     TimerPool::Stop("UploadIndex");
-    */
+
     TimerPool::Stop("Total");
     TimerPool::PrintAll();
 
