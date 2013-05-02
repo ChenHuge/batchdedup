@@ -108,6 +108,8 @@ public:
     static void   AddPartitionIndexSize(size_t len);
     static void   StatPartitionIndexSize();
 
+    static bool   FileExists(const string& fname);
+
 public:
     static ofstream mLogger;
 

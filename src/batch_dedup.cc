@@ -39,9 +39,15 @@ void init(int argc, char** argv)
     Env::SetMpiBufSize(atoi(argv[4]) * 1024);
     Env::SetReadBufSize(atoi(argv[5]) * 1024);
     Env::SetWriteBufSize(atoi(argv[6]) * 1024);
+    // triton settings
     Env::SetRemotePath("/oasis/triton/scratch/wei-ucsb/");
     Env::SetLocalPath("/state/partition1/batchdedup/");
     Env::SetHomePath("/home/wei-ucsb/batchdedup/");
+    // lonestar settings
+    // Env::SetRemotePath("/scratch/02292/mraway/");
+    // Env::SetLocalPath("/tmp/batchdedup/");
+    // Env::SetHomePath("/work/02292/mraway/batchdedup/")
+
     if (Env::GetRank() == 0) {
         Env::InitDirs();
     }
@@ -79,7 +85,7 @@ int main(int argc, char** argv)
     Env::SetRecvBuf(recv_buf);
 
     // avoid too many concurrent access to lustre
-    sleep(2 * Env::GetRank());
+    sleep(5 * Env::GetRank());
 
     LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
@@ -102,8 +108,10 @@ int main(int argc, char** argv)
         string remote_fname = Env::GetRemoteIndexName(i);
         string local_fname = Env::GetLocalIndexName(i);
         stringstream cmd;
-        cmd << "cp " << remote_fname << " " << local_fname;
-        system(cmd.str().c_str());
+        if (Env::FileExists(remote_name)) {
+            cmd << "cp " << remote_fname << " " << local_fname;
+            system(cmd.str().c_str());
+        }
     }
     TimerPool::Stop("LoadIndex");
 

@@ -2,6 +2,7 @@
 #include "trace_types.h"
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 
 const double   VM_SEG_CHANGE_RATE   = 0.5;
 const double   VM_BLOCK_CHANGE_RATE = 0.5;
@@ -253,16 +254,19 @@ void Env::InitDirs()
 
 void Env::CreateDir(string const &path, bool empty)
 {
-    if (empty) {
+    if (FileExists(path)) {
+        if (empty) {
+            stringstream ss;
+            ss << "rm -rf " << path << "/*";
+            system(ss.str().c_str());
+        }
+        return;
+    }
+    else {
         stringstream ss;
-        ss << "rm -rf " << path;
+        ss << "mkdir " << path;
         system(ss.str().c_str());
     }
-    
-    // TODO: check dir existance before mkdir
-    stringstream ss;
-    ss << "mkdir " << path;
-    system(ss.str().c_str());
 }
 
 void Env::SetSendBuf(char* buf)
@@ -433,6 +437,25 @@ void Env::StatPartitionIndexSize()
 {
     LOG_INFO("average partition index size: " << (mIndexSize / GetNumPartitionsPerNode()));
 }
+
+bool Env::FileExists(const string& fname)
+{
+    struct stat st;
+    if (stat(fname.c_str(), &st) == -1 && errno == ENOENT) {
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+
+
+
+
+
+
+
 
 
 
