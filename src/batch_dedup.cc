@@ -115,6 +115,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("LoadIndex");
 
+    MPI_Barrier(MPI_COMM_WORLD);	// sync the progress before taking measurement
     LOG_INFO("exchanging dirty blocks");
     TimerPool::Start("ExchangeDirtyBlocks");
     // mpi-1: exchange dirty segments
