@@ -108,7 +108,7 @@ int main(int argc, char** argv)
         string remote_fname = Env::GetRemoteIndexName(i);
         string local_fname = Env::GetLocalIndexName(i);
         stringstream cmd;
-        if (Env::FileExists(remote_name)) {
+        if (Env::FileExists(remote_fname)) {
             cmd << "cp " << remote_fname << " " << local_fname;
             system(cmd.str().c_str());
         }
