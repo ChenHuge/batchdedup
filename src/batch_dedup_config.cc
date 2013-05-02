@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <sys/stat.h>
+#include <errno.h>
 
 const double   VM_SEG_CHANGE_RATE   = 0.5;
 const double   VM_BLOCK_CHANGE_RATE = 0.5;
