@@ -4,9 +4,9 @@
 # the title I'm giving my job
 #PBS -N mpi_batchdedup
 # the number of nodes, and processors per node
-#PBS -l nodes=100:ppn=1
+#PBS -l nodes=10:ppn=1
 # the maximum time to run the job
-#PBS -l walltime=0:10:00
+#PBS -l walltime=0:59:00
 
 #PBS -e err.$PBS_JOBID
 #PBS -o out.$PBS_JOBID
@@ -17,4 +17,4 @@
 # makes an annoying OpenMPI warning go away
 export MX_RCACHE=0
 
-mpirun -v -machinefile $PBS_NODEFILE -np 100 ~/batchdedup/src/batch_dedup 10000 2500 1 128 16 16
+mpirun -v -machinefile $PBS_NODEFILE -np 10 ~/batchdedup/src/batch_dedup 10000 800 0 64 128 32
