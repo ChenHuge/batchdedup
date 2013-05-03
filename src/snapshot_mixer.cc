@@ -47,7 +47,8 @@ bool SnapshotMixer::Generate()
             }
 
             rd = (double)rand() / RAND_MAX;
-            if (rd > seg_threshold) { // keep this segment
+            // keep this segment, only reset its flag
+            if (rd > seg_threshold) {
                 for (size_t j = 0; j < seg.mBlocklist.size(); j++) {
                     if (i == 0) {
                         seg.mBlocklist[j].mFlags = BLOCK_DIRTY_FLAG;	// first snapshot is always dirty
@@ -58,7 +59,9 @@ bool SnapshotMixer::Generate()
                 }
                 continue;
             }
+            // make a dirty segment
             for (size_t j = 0; j < seg.mBlocklist.size(); j++) {
+                seg.mBlocklist[j].mFlags = BLOCK_DIRTY_FLAG;	// all blocks in this segment are dirty
                 rd = (double)rand() / RAND_MAX;
                 if (rd > blk_threshold) { // keep this block
                     continue;
@@ -66,7 +69,6 @@ bool SnapshotMixer::Generate()
                 // fake a checksum
                 rd = (double)rand() / RAND_MAX;
                 memcpy(&seg.mBlocklist[j].mCksum.mData[4], &rd, sizeof(rd));	// mix random data into checksum
-                seg.mBlocklist[j].mFlags = BLOCK_DIRTY_FLAG;	// all blocks in this segment are dirty
             }
         }
 
