@@ -27,7 +27,8 @@ bool SnapshotMixer::Generate()
         return false;
     }
     
-    int    seed          = mVmId * MAX_NUM_SNAPSHOTS;
+    int    seed;//          = mVmId * MAX_NUM_SNAPSHOTS;
+    int segId = 1; //start at 1 so we don't zero seed for first seg of every snapshot
     double rd            = 0.0;
     double seg_threshold = 0.0;
     double blk_threshold = 0.0;
@@ -36,6 +37,8 @@ bool SnapshotMixer::Generate()
     Segment seg;
 
     while (seg.LoadFixSize(is)) {
+        seed = mVmId * segId;
+        segId++;
         for (int i = 0; i <= mSsId; i++) {
             if (i == 0) {
                 seg_threshold = VM_SEG_CHANGE_RATE;
