@@ -1,6 +1,6 @@
 #!/bin/bash
 # the queue I'm using for this job
-#PBS -q batch
+#PBS -q hotel
 # the title I'm giving my job
 #PBS -N mpi_batchdedup
 # the number of nodes, and processors per node
@@ -12,9 +12,19 @@
 #PBS -o out.$PBS_JOBID
 
 # working dir
-#PBS -d /home/wei-ucsb/batchdedup/src/
+#PBS -d /home/mdagun/batchdedup/trunk/src/
 
 # makes an annoying OpenMPI warning go away
 export MX_RCACHE=0
+partitions=10000
+vmspernode=25
+ssid=0
+mpibufsize=64
+rbufsize=128
+wbufsize=32
+rpath=/oasis/tscc/scratch/mdagun
+lpath=$TMPDIR
+hpath=/home/mdagun/batchdedup_home
+ssfile=/home/mdagun/batchdedup_home/sample_vms/sample_vm_list
 
-mpirun -v -machinefile $PBS_NODEFILE -np 10 ~/batchdedup/src/batch_dedup 10000 800 0 64 128 32
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile

@@ -243,7 +243,6 @@ string Env::GetTaskName()
 
 void Env::InitDirs()
 {
-    CreateDir("/home/wei-ucsb/batchdedup/");
     CreateDir(mRemotePath);
     CreateDir(mHomePath);
     for (uint16_t i = 0; i <= 0xFF; i++) {

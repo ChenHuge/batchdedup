@@ -21,40 +21,166 @@ using namespace std;
 
 void usage(char* progname)
 {
-    cout << "Usage: " << progname << " total_num_partitions total_num_VMs num_snapshots mpi_buffer read_buffer write_buffer" << endl;
+    cout << "Usage: " << progname << " <arguments>" << endl
+         << "Where arguments contains one of each of:" << endl
+         << "  --partitions <partition_count>" << endl
+         << "  --nodevms <vms_per_node>" << endl
+         << "  --ssid <current_snapshot_number>" << endl
+         << "  --mpibufsize <mpi_buffer_size> (in KB)" << endl
+         << "  --rbufsize <read_buffer_size> (in KB)" << endl
+         << "  --wbufsize <write_buffer_size> (in KB)" << endl
+         << "  --remotepath <path>" << endl
+         << "  --localpath <path>" << endl
+         << "  --homepath <path>" << endl
+         << "  --snapshotfile <initial_snapshot_list_file>" << endl;
+
     return;
 }
 
 // setup environment, create directories
 void init(int argc, char** argv)
 {
-    int num_tasks, rank;
+    int num_tasks, rank, argi;
+    char* snapshot_file;
+    bool partitions_set = false;
+    bool numvms_set = false;
+    bool ssid_set = false;
+    bool mpibufsize_set = false;
+    bool readbufsize_set = false;
+    bool writebufsize_set = false;
+    bool remotepath_set = false;
+    bool localpath_set = false;
+    bool homepath_set = false;
+    bool snapshotfile_set = false;
     MPI_Init(&argc,&argv);
     MPI_Comm_size(MPI_COMM_WORLD, &num_tasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     Env::SetNumTasks(num_tasks);
     Env::SetRank(rank);
-    Env::SetNumPartitions(atoi(argv[1]));
-    Env::SetNumVms(atoi(argv[2]));
-    Env::SetNumSnapshots(atoi(argv[3]));
-    Env::SetMpiBufSize(atoi(argv[4]) * 1024);
-    Env::SetReadBufSize(atoi(argv[5]) * 1024);
-    Env::SetWriteBufSize(atoi(argv[6]) * 1024);
+    argi = 1;
+    while(argi < argc && argv[argi][0] == '-') {
+        if (strcmp(argv[argi],"--partitions") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No partition count given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetNumPartitions(atoi(argv[argi++]));
+            partitions_set = true;
+        } else if (strcmp(argv[argi],"--nodevms") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No vm count given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetNumVms(atoi(argv[argi++]));
+            numvms_set = true;
+        } else if (strcmp(argv[argi],"--ssid") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No ssid given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetNumSnapshots(atoi(argv[argi++]));
+            ssid_set = true;
+        } else if (strcmp(argv[argi],"--mpibufsize") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No mpi buffer size given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetMpiBufSize(atoi(argv[argi++]) * 1024);
+            mpibufsize_set = true;
+        } else if (strcmp(argv[argi],"--rbufsize") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No read buffer size given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetReadBufSize(atoi(argv[argi++]) * 1024);
+            readbufsize_set = true;
+        } else if (strcmp(argv[argi],"--wbufsize") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No write buffer size given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetWriteBufSize(atoi(argv[argi++]) * 1024);
+            writebufsize_set = true;
+        } else if (strcmp(argv[argi],"--remotepath") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No remote path given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetRemotePath(argv[argi++]);
+            remotepath_set = true;
+        } else if (strcmp(argv[argi],"--localpath") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No local path given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetLocalPath(argv[argi++]);
+            localpath_set = true;
+        } else if (strcmp(argv[argi],"--homepath") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No home path given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetHomePath(argv[argi++]);
+            homepath_set = true;
+        } else if (strcmp(argv[argi],"--snapshotfile") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No snapshot file path given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            snapshot_file = argv[argi++];
+            snapshotfile_set = true;
+        } else if (strcmp(argv[argi],"--") == 0) {
+            argi++;
+            cout << "-- break" << endl;
+            break;
+        } else {
+            stringstream ss;
+            ss << "Unknown option given: " << argv[argi++];
+            cout << ss.str().c_str() << endl;
+            usage(argv[0]);
+            exit(1);
+        }
+    }
     // triton settings
-    Env::SetRemotePath("/oasis/triton/scratch/wei-ucsb/");
-    Env::SetLocalPath("/state/partition1/batchdedup/");
-    Env::SetHomePath("/home/wei-ucsb/batchdedup/");
     // lonestar settings
     // Env::SetRemotePath("/scratch/02292/mraway/");
     // Env::SetLocalPath("/tmp/batchdedup/");
     // Env::SetHomePath("/work/02292/mraway/batchdedup/")
+    if (!partitions_set || !numvms_set || !ssid_set || !mpibufsize_set ||
+        !readbufsize_set || !writebufsize_set || !remotepath_set ||
+        !localpath_set || !homepath_set || !snapshotfile_set) {
+        LOG_ERROR("Must specify all arguments");
+        cout << "Must specify all arguments" << endl;
+        usage(argv[0]);
+        exit(1);
+    }
 
     if (Env::GetRank() == 0) {
         Env::InitDirs();
     }
     MPI_Barrier(MPI_COMM_WORLD);	// other process wait for shared dirs to be created
     Env::SetLogger();
-    Env::LoadSampleTraceList("/home/wei-ucsb/batchdedup/sample_traces");
+    Env::LoadSampleTraceList(snapshot_file);
     LOG_INFO(Env::ToString());
 }
 
@@ -72,10 +198,10 @@ void final()
 
 int main(int argc, char** argv)
 {
-    if (argc != 7) {
-        usage(argv[0]);
-        return 0;
-    }
+    //if (argc != 7) {
+    //    usage(argv[0]);
+    //    return 0;
+    //}
 
     TimerPool::Start("Total");
     init(argc, argv);
