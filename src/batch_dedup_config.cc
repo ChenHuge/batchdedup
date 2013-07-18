@@ -129,7 +129,7 @@ void Env::LoadSampleTraceList(string fname)
     string trace_fname("");
     while (is.good()) {
         getline(is, trace_fname);
-        if(trace_fname.length() == 0) {
+        if(trace_fname.length() < 1 || trace_fname.c_str()[0] == '\n') {
             continue;
         }
         mSampleTraces.push_back(trace_fname);

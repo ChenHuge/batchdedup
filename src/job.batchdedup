@@ -16,15 +16,38 @@
 
 # makes an annoying OpenMPI warning go away
 export MX_RCACHE=0
-partitions=10000
+
+partitions=1000
 vmspernode=25
 ssid=0
-mpibufsize=64
+#multipy mpibuf by 2p for memory usage
+mpibufsize=16
+#only one read buffer
 rbufsize=128
-wbufsize=32
+#multiply by q/p (number of partitions on this node) for mem usage
+wbufsize=8
+#also consider partition index memory usage
 rpath=/oasis/tscc/scratch/mdagun
 lpath=$TMPDIR
 hpath=/home/mdagun/batchdedup_home
-ssfile=/home/mdagun/batchdedup_home/sample_vms/sample_vm_list
+ssfile=/home/mdagun/batchdedup_home/sample_vms/sample_vm_list.txt
 
 mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=1
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=2
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=3
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=4
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=5
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=6
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=7
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=8
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#ssid=9
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
