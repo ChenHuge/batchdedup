@@ -33,6 +33,7 @@ public:
     vector<IndexEntry> mIndex;
 
 public:
+    size_t getNumEntries();
     void FromStream(istream& is);
     void ToStream(ostream& os);
 

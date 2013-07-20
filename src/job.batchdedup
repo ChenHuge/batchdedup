@@ -32,11 +32,14 @@ lpath=$TMPDIR
 hpath=/home/mdagun/batchdedup_home
 ssfile=/home/mdagun/batchdedup_home/sample_vms/sample_vm_list.txt
 
+if [[ "$PBS_NODENUM" == "0" ]]; then
+    rm -r $rpath/$partitions
+fi
 mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
-#ssid=1
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
-#ssid=2
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+ssid=1
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+ssid=2
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=3
 #mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=4

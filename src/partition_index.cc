@@ -44,6 +44,10 @@ bool IndexEntry::operator==(const IndexEntry& other) const
     return mCksum == other.mCksum;
 }
 
+size_t PartitionIndex::getNumEntries() {
+    return mIndex.size();
+}
+
 void PartitionIndex::FromStream(istream &is)
 {
     mIndex.clear();

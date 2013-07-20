@@ -149,6 +149,9 @@ void init(int argc, char** argv)
             }
             snapshot_file = argv[argi++];
             snapshotfile_set = true;
+        } else if (strcmp(argv[argi],"-?") == 0) {
+            usage(argv[0]);
+            exit(0);
         } else if (strcmp(argv[argi],"--") == 0) {
             argi++;
             cout << "-- break" << endl;
@@ -229,7 +232,7 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("PrepareTrace");    
 
-    LOG_INFO("loading partition index from lustre");
+    LOG_INFO("loading partition index from lustre to local directory");
     TimerPool::Start("LoadIndex");
     for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
         string remote_fname = Env::GetRemoteIndexName(i);
@@ -267,11 +270,14 @@ int main(int argc, char** argv)
     TimerPool::Stop("ExchangeDirtyBlocks");
 
     LOG_INFO("making dedup comparison");
+    uint64_t indexEntries = 0;
+    
     TimerPool::Start("DedupComparison");
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
         index.FromFile(Env::GetLocalIndexName(partid));
+        indexEntries += (uint64_t)index.getNumEntries();
         RecordReader<Block> reader(Env::GetStep2InputName(partid));
         Block blk;
         BlockMeta bm;
@@ -298,7 +304,9 @@ int main(int argc, char** argv)
             output3.Put(blk);
         }
     }    
+
     TimerPool::Stop("DedupComparison");
+    LOG_INFO("Total entries in current partitions: " << indexEntries);
     Env::StatPartitionIndexSize();
 
     LOG_INFO("exchange new blocks");
@@ -355,6 +363,7 @@ int main(int argc, char** argv)
     TimerPool::Stop("ExchangeNewRefs");
 
     LOG_INFO("updating partition index and dup_new block references");
+    uint64_t dupNewBlocks = 0;
     TimerPool::Start("UpdateRefAndIndex");
     // local-4: update refs to pending blocks, then update partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
@@ -365,6 +374,7 @@ int main(int argc, char** argv)
         Block blk;
         BlockMeta bm;
         while (input.Get(blk)) {
+            dupNewBlocks++;
             if (index.Find(blk.mCksum)) {
                 bm.mBlk = blk;
                 bm.mRef = REF_VALID;
@@ -377,6 +387,7 @@ int main(int argc, char** argv)
         index.AppendToFile(Env::GetLocalIndexName(partid));
     }
     TimerPool::Stop("UpdateRefAndIndex");
+    LOG_INFO("duplicate-with-new blocks in current partitions: " << dupNewBlocks);
 
     LOG_INFO("exchanging dup blocks");
     TimerPool::Start("ExchangeDupBlocks");

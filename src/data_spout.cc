@@ -57,9 +57,9 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
 
         // find a dirty block
         while (mBlk.FromStream(mInput)) {
-            mStatTotalSize += mBlk.mSize;
+            mStatTotalSize += (uint64_t)mBlk.mSize;
             if (mBlk.mFlags & BLOCK_DIRTY_FLAG) {
-                mStatDirtySize += mBlk.mSize;
+                mStatDirtySize += (uint64_t)mBlk.mSize;
                 pdata = static_cast<DataRecord*>(&mBlk);
                 return true;
             }
