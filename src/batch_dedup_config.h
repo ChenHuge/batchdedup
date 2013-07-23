@@ -93,9 +93,9 @@ public:
     static int    GetSourceNodeId(int vmid);
 
     static string GetStep2InputName(int partid);
-    static string GetStep2Output1Name(int partid);
-    static string GetStep2Output2Name(int partid);
-    static string GetStep2Output3Name(int partid);
+    static string GetStep2OutputDupBlocksName(int partid);
+    static string GetStep2OutputDupWithNewName(int partid);
+    static string GetStep2OutputNewBlocksName(int partid);
 
     static string GetStep3InputName(int vmid);
     static string GetStep3OutputName(int vmid);

@@ -13,6 +13,7 @@ TraceReader::TraceReader()
     mReadBuf = new char[Env::GetReadBufSize()];
     mInput.rdbuf()->pubsetbuf(mReadBuf, Env::GetReadBufSize());
     mStatTotalSize = 0;
+    mStatTotalCount = 0;
     mStatDirtySize = 0;
 }
 
@@ -21,7 +22,12 @@ TraceReader::~TraceReader()
     if (mInput.is_open())
         mInput.close();
     delete[] mReadBuf;
+}
+
+void TraceReader::Stat()
+{
     LOG_INFO("total VM size: " << mStatTotalSize << ", dirty segment size: " << mStatDirtySize);
+    LOG_INFO("total Blocks Read: " << mStatTotalCount);
 }
 
 int TraceReader::GetRecordSize()
@@ -58,13 +64,13 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
         // find a dirty block
         while (mBlk.FromStream(mInput)) {
             mStatTotalSize += (uint64_t)mBlk.mSize;
+            mStatTotalCount++;
             if (mBlk.mFlags & BLOCK_DIRTY_FLAG) {
                 mStatDirtySize += (uint64_t)mBlk.mSize;
                 pdata = static_cast<DataRecord*>(&mBlk);
                 return true;
             }
         }
-
         // end of VM trace, close it
         mInput.close();
     }
@@ -75,6 +81,7 @@ NewBlockReader::NewBlockReader()
 {
     mPartId = Env::GetPartitionBegin();
     mInputPtr = NULL;
+    mStatNewCount = 0;
 }
 
 NewBlockReader::~NewBlockReader()
@@ -82,6 +89,12 @@ NewBlockReader::~NewBlockReader()
     if (mInputPtr != NULL) {
         delete mInputPtr;
     }
+}
+
+
+void NewBlockReader::Stat()
+{
+    LOG_INFO("new blocks read: " << mStatNewCount);
 }
 
 int NewBlockReader::GetRecordSize()
@@ -103,12 +116,13 @@ bool NewBlockReader::GetRecord(DataRecord *&pdata)
             if (mPartId >= Env::GetPartitionEnd()) {
                 return false;
             }
-            mInputPtr = new RecordReader<Block>(Env::GetStep2Output3Name(mPartId));
+            mInputPtr = new RecordReader<Block>(Env::GetStep2OutputNewBlocksName(mPartId));
             mPartId ++;
         }
 
         // read one block
         if (mInputPtr->Get(mBlk)) {
+            mStatNewCount++;
             pdata =  static_cast<DataRecord*>(&mBlk);
             return true;
         }
@@ -125,6 +139,7 @@ NewRefReader::NewRefReader()
     mVmIdx = 0;
     mInputPtr = NULL;
     mStatNewSize = 0;
+    mStatNewCount = 0;
 }
 
 NewRefReader::~NewRefReader()
@@ -132,7 +147,13 @@ NewRefReader::~NewRefReader()
     if (mInputPtr != NULL) {
         delete mInputPtr;
     }
+}
+
+
+void NewRefReader::Stat()
+{
     LOG_INFO("new block size: " << mStatNewSize);
+    LOG_INFO("new block count: " << mStatNewCount);
 }
 
 int NewRefReader::GetRecordSize()
@@ -163,6 +184,7 @@ bool NewRefReader::GetRecord(DataRecord*& pdata)
         BlockMeta bm;
         while (mInputPtr->Get(bm)) {
             mStatNewSize += bm.mBlk.mSize;
+            mStatNewCount++;
             mRecord.mCksum = bm.mBlk.mCksum;
             mRecord.mRef = bm.mRef;
             pdata = static_cast<DataRecord*>(&mRecord);
@@ -180,6 +202,7 @@ DupBlockReader::DupBlockReader()
 {
     mPartId = Env::GetPartitionBegin();
     mInputPtr = NULL;
+    mStatDupCount = 0;
 }
 
 DupBlockReader::~DupBlockReader()
@@ -187,6 +210,12 @@ DupBlockReader::~DupBlockReader()
     if (mInputPtr != NULL) {
         delete mInputPtr;
     }
+}
+
+
+void DupBlockReader::Stat()
+{
+    LOG_INFO("dup blocks: " << mStatDupCount);
 }
 
 int DupBlockReader::GetRecordSize()
@@ -208,12 +237,13 @@ bool DupBlockReader::GetRecord(DataRecord *&pdata)
             if (mPartId >= Env::GetPartitionEnd()) {
                 return false;
             }
-            mInputPtr = new RecordReader<BlockMeta>(Env::GetStep2Output1Name(mPartId));
+            mInputPtr = new RecordReader<BlockMeta>(Env::GetStep2OutputDupBlocksName(mPartId));
             mPartId ++;
         }
 
         // read one block
         if (mInputPtr->Get(mRecord)) {
+            mStatDupCount++;
             pdata =  static_cast<DataRecord*>(&mRecord);
             return true;
         }

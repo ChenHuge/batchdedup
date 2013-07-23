@@ -74,9 +74,15 @@ void RawRecordAccumulator::ProcessBuffer()
         int part_id = Env::GetPartitionId(pblk->mCksum);
         mWriterPtrs[part_id % num_parts]->Put(*pblk);
         num_records++;
+        mStatRecordCount++;
     }
     LOG_DEBUG("processed " << num_records << " records");
     Reset();
+}
+
+void RawRecordAccumulator::Stat()
+{
+    LOG_INFO("Total Records Processed: " << mStatRecordCount);
 }
 
 
@@ -88,6 +94,7 @@ NewRecordAccumulator::NewRecordAccumulator()
         int vmid = Env::GetVmId(i);
         mWriters[vmid] = new RecordWriter<Block>(Env::GetStep3InputName(vmid));
     }
+    mStatRecordCount = 0;
 }
 
 NewRecordAccumulator::~NewRecordAccumulator()
@@ -112,10 +119,16 @@ void NewRecordAccumulator::ProcessBuffer()
         else {
             it->second->Put(*pblk);
             num_records++;
+            mStatRecordCount++;
         }
     }
     LOG_DEBUG("processed " << num_records << " records");
     Reset();
+}
+
+void NewRecordAccumulator::Stat()
+{
+    LOG_INFO("Total Records Processed: " << mStatRecordCount);
 }
 
 
@@ -130,6 +143,7 @@ NewRefAccumulator::NewRefAccumulator()
         mWriterPtrs[partid % num_parts] = 
             new RecordWriter<IndexEntry>(Env::GetStep4InputName(partid));
     }
+    mStatRecordCount = 0;
 }
 
 NewRefAccumulator::~NewRefAccumulator()
@@ -151,9 +165,15 @@ void NewRefAccumulator::ProcessBuffer()
         int part_id = Env::GetPartitionId(p_record->mCksum);
         mWriterPtrs[part_id % num_parts]->Put(*p_record);
         num_records++;
+        mStatRecordCount++;
     }
     LOG_DEBUG("processed " << num_records << " records");
     Reset();
+}
+
+void NewRefAccumulator::Stat()
+{
+    LOG_INFO("Total Records Processed: " << mStatRecordCount);
 }
 
 
@@ -166,6 +186,7 @@ DupRecordAccumulator::DupRecordAccumulator()
         mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep3OutputName(vmid), true);
         //mWriters[vmid] = new RecordWriter<BlockMeta>(Env::GetStep4OutputName(vmid));
     }
+    mStatRecordCount = 0;
 }
 
 DupRecordAccumulator::~DupRecordAccumulator()
@@ -190,10 +211,16 @@ void DupRecordAccumulator::ProcessBuffer()
         else {
             it->second->Put(*p_record);
             num_records++;
+            mStatRecordCount++;
         }
     }
     LOG_DEBUG("processed " << num_records << " records");
     Reset();
+}
+
+void DupRecordAccumulator::Stat()
+{
+    LOG_INFO("Total Records Processed: " << mStatRecordCount);
 }
 
 

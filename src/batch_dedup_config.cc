@@ -133,6 +133,7 @@ void Env::LoadSampleTraceList(string fname)
             continue;
         }
         mSampleTraces.push_back(trace_fname);
+        //LOG_INFO("Added trace file: " << trace_fname);
         LOG_DEBUG("add trace file: " << trace_fname);
     }
     is.close();
@@ -337,21 +338,21 @@ string Env::GetStep2InputName(int partid)
     return ss.str();
 }
 
-string Env::GetStep2Output1Name(int partid)
+string Env::GetStep2OutputDupBlocksName(int partid)
 {
     stringstream ss;
     ss << mLocalPath << "partition." << partid << ".step2.out1";
     return ss.str();
 }
 
-string Env::GetStep2Output2Name(int partid)
+string Env::GetStep2OutputDupWithNewName(int partid)
 {
     stringstream ss;
     ss << mLocalPath << "partition." << partid << ".step2.out2";
     return ss.str();
 }
 
-string Env::GetStep2Output3Name(int partid)
+string Env::GetStep2OutputNewBlocksName(int partid)
 {
     stringstream ss;
     ss << mLocalPath << "partition." << partid << ".step2.out3";

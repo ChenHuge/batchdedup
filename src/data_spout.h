@@ -19,6 +19,8 @@ public:
     virtual int GetRecordDest(DataRecord* pdata) = 0;
 
     virtual int GetRecordSize() = 0;
+
+    virtual void Stat() = 0;
 };
 
 class TraceReader : public DataSpout
@@ -41,6 +43,9 @@ public:
     // override
     int GetRecordSize();
 
+    // override
+    void Stat();
+
 private:
     int mNumTasks;
     ifstream mInput;
@@ -48,6 +53,7 @@ private:
     int mVmIdx;
     uint64_t mStatTotalSize;
     uint64_t mStatDirtySize;
+    uint64_t mStatTotalCount;
 };
 
 class NewBlockReader : public DataSpout
@@ -70,8 +76,12 @@ public:
     // override
     int GetRecordSize();
 
+    // override
+    void Stat();
+
 private:
     RecordReader<Block>* mInputPtr;
+    uint64_t mStatNewCount;
     int mPartId;
 };
 
@@ -95,10 +105,14 @@ public:
     // override
     int GetRecordSize();
 
+    // override
+    void Stat();
+
 private:
     RecordReader<BlockMeta>* mInputPtr;
     int mVmIdx;
     uint64_t mStatNewSize;
+    uint64_t mStatNewCount;
 };
 
 class DupBlockReader : public DataSpout
@@ -121,9 +135,13 @@ public:
     // override
     int GetRecordSize();
 
+    // override
+    void Stat();
+
 private:
     RecordReader<BlockMeta>* mInputPtr;
     int mPartId;
+    uint64_t mStatDupCount;
 };
 
 #endif

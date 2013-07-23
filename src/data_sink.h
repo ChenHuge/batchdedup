@@ -18,6 +18,7 @@ public:
     virtual ~DataSink();
 
     virtual void ProcessBuffer() = 0;
+    virtual void Stat() = 0;
 
 public:
     DataRecord* mRecord;
@@ -47,9 +48,12 @@ public:
     ~RawRecordAccumulator();
 
     void ProcessBuffer();
+    void Stat();
+
 
 private:
     RecordWriter<Block>** mWriterPtrs;
+    uint64_t mStatRecordCount;
 };
 
 // save new blocks by vm
@@ -60,9 +64,11 @@ public:
     ~NewRecordAccumulator();
 
     void ProcessBuffer();
+    void Stat();
 
 private:
     map<int, RecordWriter<Block>*> mWriters;
+    uint64_t mStatRecordCount;
 };
 
 
@@ -74,9 +80,11 @@ public:
     ~NewRefAccumulator();
 
     void ProcessBuffer();
+    void Stat();
 
 private:
     RecordWriter<IndexEntry>** mWriterPtrs;
+    uint64_t mStatRecordCount;
 };
 
 // save dup block meta by vm
@@ -87,9 +95,11 @@ public:
     ~DupRecordAccumulator();
 
     void ProcessBuffer();
+    void Stat();
 
 private:
     map<int, RecordWriter<BlockMeta>*> mWriters;
+    uint64_t mStatRecordCount;
 };
 
 
