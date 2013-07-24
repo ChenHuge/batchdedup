@@ -79,6 +79,8 @@ struct Checksum
     uint32_t First4Bytes() const;
 
     uint32_t Last4Bytes() const;
+
+    uint32_t Middle4Bytes() const;
 };
 
 /*

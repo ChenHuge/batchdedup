@@ -261,7 +261,11 @@ int main(int argc, char** argv)
 
         p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
         p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->SetTimerPrefix("ExchangeDirtyBlocks");
         p_mpi->Start();
+        LOG_INFO("ExchangeDirtyBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+        p_reader->Stat();
+        p_accu->Stat();
 
         delete p_mpi;
         delete p_reader;
@@ -272,6 +276,10 @@ int main(int argc, char** argv)
     LOG_INFO("making dedup comparison");
     uint64_t indexEntries = 0;
     
+    uint64_t s2dedup_input_count = 0;
+    uint64_t s2dup_output_count = 0;
+    uint64_t s2dupnew_output_count = 0;
+    uint64_t s2new_output_count = 0;
     TimerPool::Start("DedupComparison");
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
@@ -282,13 +290,19 @@ int main(int argc, char** argv)
         Block blk;
         BlockMeta bm;
         DedupBuffer buf;
-        RecordWriter<BlockMeta> output1(Env::GetStep2Output1Name(partid));
-        RecordWriter<Block> output2(Env::GetStep2Output2Name(partid));
-        RecordWriter<Block> output3(Env::GetStep2Output3Name(partid));
+        RecordWriter<BlockMeta> output1(Env::GetStep2OutputDupBlocksName(partid));
+        RecordWriter<Block> output2(Env::GetStep2OutputDupWithNewName(partid));
+        RecordWriter<Block> output3(Env::GetStep2OutputNewBlocksName(partid));
+        //int partitionDups = 0;
+        //int partitionDupNew = 0;
+        //int partitionNew = 0;
 
         while(reader.Get(blk)) {
+            s2dedup_input_count++;
             // dup with existing blocks?
             if (index.Find(blk.mCksum)) {
+                s2dup_output_count++;
+                //partitionDups++;
                 bm.mBlk = blk;
                 bm.mRef = REF_VALID;
                 output1.Put(bm);
@@ -296,16 +310,26 @@ int main(int argc, char** argv)
             }
             // dup with new blocks in this run?
             if (buf.Find(blk)) {
+                s2dupnew_output_count++;
+                //partitionDupNew++;
                 output2.Put(blk);
                 continue;
             }
             // completely new
+            //partitionNew++;
+            s2new_output_count++;
             buf.Add(blk);
             output3.Put(blk);
         }
+        //LOG_INFO("Step 2 Partition " << partid << " Summary\tnew: " << partitionNew << "\tdupnew: " << partitionDupNew << "\tdup: " << partitionDups);
     }    
 
     TimerPool::Stop("DedupComparison");
+    LOG_INFO("Step 2 Summary: blocks read: " << s2dedup_input_count);
+    LOG_INFO("Step 2 Summary: dup blocks written: " << s2dup_output_count);
+    LOG_INFO("Step 2 Summary: dup-with-new blocks written: " << s2dupnew_output_count);
+    LOG_INFO("Step 2 Summary: new blocks written: " << s2new_output_count);
+    LOG_INFO("Step 2 Summary: total blocks written: " << (s2new_output_count + s2dupnew_output_count + s2dup_output_count));
     LOG_INFO("Total entries in current partitions: " << indexEntries);
     Env::StatPartitionIndexSize();
 
@@ -319,7 +343,11 @@ int main(int argc, char** argv)
 
         p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
         p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->SetTimerPrefix("ExchangeNewBlocks");
         p_mpi->Start();
+        LOG_INFO("ExchangeNewBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+        p_reader->Stat();
+        p_accu->Stat();
 
         delete p_mpi;
         delete p_reader;
@@ -328,6 +356,7 @@ int main(int argc, char** argv)
     TimerPool::Stop("ExchangeNewBlocks");    
 
     LOG_INFO("writing new blocks to backup storage");
+    uint64_t s3block_count = 0;
     TimerPool::Start("WriteNewBlocks");
     // local-3: write new blocks to storage
     for (i = 0; Env::GetVmId(i) >= 0; i++) {
@@ -337,12 +366,14 @@ int main(int argc, char** argv)
         Block blk;
         BlockMeta bm;
         while (input.Get(blk)) {
+            s3block_count++;
             bm.mBlk = blk;
             bm.mRef = REF_VALID;
             output.Put(bm);
         }
     }
     TimerPool::Stop("WriteNewBlocks");
+    LOG_INFO("Step 3 Summary: blocks read and written: " << s3block_count);
 
     LOG_INFO("exchanging data reference of new blocks");
     TimerPool::Start("ExchangeNewRefs");
@@ -354,7 +385,11 @@ int main(int argc, char** argv)
 
         p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
         p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->SetTimerPrefix("ExchangeNewRefs");
         p_mpi->Start();
+        LOG_INFO("ExchangeNewRefs Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+        p_reader->Stat();
+        p_accu->Stat();
 
         delete p_mpi;
         delete p_reader;
@@ -369,8 +404,8 @@ int main(int argc, char** argv)
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
         index.FromFile(Env::GetStep4InputName(partid));
-        RecordReader<Block> input(Env::GetStep2Output2Name(partid));
-        RecordWriter<BlockMeta> output(Env::GetStep2Output1Name(partid), true);
+        RecordReader<Block> input(Env::GetStep2OutputDupWithNewName(partid));
+        RecordWriter<BlockMeta> output(Env::GetStep2OutputDupBlocksName(partid), true);
         Block blk;
         BlockMeta bm;
         while (input.Get(blk)) {
@@ -385,9 +420,11 @@ int main(int argc, char** argv)
             }
         }
         index.AppendToFile(Env::GetLocalIndexName(partid));
+        //input.Stat();
+        //output.Stat();
     }
     TimerPool::Stop("UpdateRefAndIndex");
-    LOG_INFO("duplicate-with-new blocks in current partitions: " << dupNewBlocks);
+    LOG_INFO("Reference Update Summary: dup-with-new blocks: " << dupNewBlocks);
 
     LOG_INFO("exchanging dup blocks");
     TimerPool::Start("ExchangeDupBlocks");
@@ -399,7 +436,11 @@ int main(int argc, char** argv)
 
         p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
         p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+        p_mpi->SetTimerPrefix("ExchangeDupBlocks");
         p_mpi->Start();
+        LOG_INFO("ExchangeDupBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+        p_reader->Stat();
+        p_accu->Stat();
 
         delete p_mpi;
         delete p_reader;

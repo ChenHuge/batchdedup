@@ -133,6 +133,13 @@ uint32_t Checksum::Last4Bytes() const
     return tmp;
 }
 
+uint32_t Checksum::Middle4Bytes() const
+{
+    uint32_t tmp;
+    memcpy((char*)&tmp, &mData[CKSUM_LEN - 12], 4);
+    return tmp;
+}
+
 int Block::GetSize()
 {
     return CKSUM_LEN + sizeof(Block::mFileID) + sizeof(Block::mFlags) + sizeof(Block::mSize) + sizeof(Block::mOffset);

@@ -1,6 +1,7 @@
 #include "mpi_engine.h"
 #include "batch_dedup_config.h"
 #include "mpi.h"
+#include "timer.h"
 
 MpiEngine::MpiEngine()
 	: mSpoutPtr(NULL),
@@ -13,6 +14,7 @@ MpiEngine::MpiEngine()
     mDispls = new int[Env::GetNumTasks()];
     mRecvCounts = new int[Env::GetNumTasks()];
     mHeaders = new MsgHeader[Env::GetNumTasks()];
+    mpiCounter = 0;
 }
 
 MpiEngine::~MpiEngine()
@@ -46,9 +48,13 @@ void MpiEngine::Start()
     size_t buf_size = Env::GetMpiBufSize();
     int num_tasks = Env::GetNumTasks();
     int rc;
+    string read_timer = timerPrefix + ":MpiRead";
+    string mpi_timer = timerPrefix + ":MpiNetwork";
+    string processing_timer = timerPrefix + ":MpiProcessing";
 
     while(true) {
         // fill send buffer if we have data to read
+        TimerPool::Start(read_timer);
         if (mSpoutPtr->GetRecord(pd)) {
             int dest = mSpoutPtr->GetRecordDest(pd);
             pd->ToBuffer(&send_buf[(dest * buf_size) + mWritePos[dest]]);
@@ -57,6 +63,7 @@ void MpiEngine::Start()
             if (mWritePos[dest] < (buf_size - pd->GetSize()))
                 continue;	// buffer nut full, read more
         }
+        TimerPool::Stop(read_timer);
 
         // buffer full or cannot read more, need to send
         // prepare header
@@ -72,7 +79,7 @@ void MpiEngine::Start()
             mHeaders[i].mFlags = send_flag;
             mHeaders[i].ToBuffer(&send_buf[i * buf_size]);
         }
-        
+        TimerPool::Start(mpi_timer);
         // send recv size
         LOG_DEBUG("sending msg size");
         rc = MPI_Alltoall(mWritePos, 1, MPI_INT, 
@@ -92,6 +99,8 @@ void MpiEngine::Start()
             LOG_ERROR("send data fail");
             break;
         }
+        TimerPool::Stop(mpi_timer);
+        mpiCounter++;
         
         // check finish condition
         bool finished = true;
@@ -104,12 +113,14 @@ void MpiEngine::Start()
         }
 
         // process data
+        TimerPool::Start(processing_timer);
         mSinkPtr->ProcessBuffer();
         
         // reset send buffer
         for (int i = 0; i < num_tasks; i++) {
            mWritePos[i] = header_size;
         }
+        TimerPool::Stop(processing_timer);
 
         if (finished) {
             LOG_DEBUG("nobody has data to send, stop");
@@ -126,4 +137,12 @@ void MpiEngine::SetDataSpout(DataSpout* spout)
 void MpiEngine::SetDataSink(DataSink* sink)
 {
     mSinkPtr = sink;
+}
+void MpiEngine::SetTimerPrefix(string prefix)
+{
+    timerPrefix = prefix;
+}
+int MpiEngine::GetMpiCount()
+{
+    return mpiCounter;
 }

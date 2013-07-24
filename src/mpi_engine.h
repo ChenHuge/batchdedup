@@ -13,6 +13,8 @@ public:
     void Start();
     void SetDataSpout(DataSpout* spout);
     void SetDataSink(DataSink* sink);
+    void SetTimerPrefix(string prefix);
+    int GetMpiCount();
 
 private:
     DataSpout* mSpoutPtr;
@@ -21,6 +23,8 @@ private:
     int*       mDispls;
     int*       mRecvCounts;
     MsgHeader* mHeaders;
+    string timerPrefix;
+    uint64_t mpiCounter;
 
 private:
     void Init();

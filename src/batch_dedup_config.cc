@@ -389,7 +389,7 @@ string Env::GetStep4OutputName(int vmid)
 
 int Env::GetPartitionId(const Checksum& cksum)
 {
-    return cksum.First4Bytes() % mNumPartitions;
+    return cksum.Middle4Bytes() % mNumPartitions;
 }
 
 int Env::GetDestNodeId(int partid)
