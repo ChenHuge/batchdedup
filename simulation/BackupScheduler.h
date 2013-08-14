@@ -11,7 +11,7 @@ class BackupScheduler {
         std::vector<std::vector<double> > machines;
 };
 
-class AllScheduler : public BackupScheduler{
+class NullScheduler : public BackupScheduler{
     public:
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();
