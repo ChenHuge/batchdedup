@@ -261,7 +261,7 @@ double model_time(const vector<vector<double> > &machine_loads) {
     //Stage 1 - exchange dirty data
     time_cost += r_max * c / b_d; //read from disk
     time_cost += net_latency * (u * r_max / m_n); //transfer dirty data
-    time_cost += u * r_max / b_wd; //save requests to disk
+    time_cost += u * r / b_wd; //save requests to disk
     //Stage 2 - handle dedup requests
     time_cost += r * u / b_d; //read requests from disk
     time_cost += n*e/b_d; //read one machine's worth of index from disk
