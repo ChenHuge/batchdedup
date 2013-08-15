@@ -258,40 +258,37 @@ double model_time(const vector<vector<double> > &machine_loads) {
     double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
     //cout << "r_max=" << r_max << endl;
 
-    //Stage 1 - exchange dirty data
+    //Stage 1a - exchange dirty data
     time_cost += r_max * c / b_d; //read from disk
-    time_cost += net_latency * (u * r_max / m_n); //transfer dirty data
+    time_cost += net_latency * (u * r_max * p / m_n); //transfer dirty data
     time_cost += u * r / b_wd; //save requests to disk
-    //Stage 2 - handle dedup requests
+    //Stage 1b - handle dedup requests
     time_cost += r * u / b_d; //read requests from disk
     time_cost += n*e/b_d; //read one machine's worth of index from disk
     time_cost += r * lookup_time; //perform lookups
     time_cost += r * e / b_d; //write out results of each lookup to one of 3 files per partition
-    //Stage 3 - exchange new block results
+    //Stage 2a - exchange new block results
     time_cost += r * (1-fp_ratio) * e / b_d; //read new results from disk
-    time_cost += net_latency * (e * r_max * (1-fp_ratio) / m_n); //exchange new blocks
+    time_cost += net_latency * (e * r2_max * p / m_n); //exchange new blocks
     time_cost += r2_max * e / b_wd; //save new block results to disk
-    //Stage 3b - save new blocks
+    //Stage 2b - save new blocks
     time_cost += r2_max * (e+c) / b_d; //read new block results from disk, and the associated blocks
     time_cost += r2_max * c / b_wb; //write new blocks to the backend - also update the lookup results
-    //Stage 4 - exchange new block references
+    //Stage 3a - exchange new block references
     time_cost += r2_max * e / b_wd; //re-read new block results from disk (now with references)
-    time_cost += net_latency * (e * r2_max / m_n); //exchange new block references back to parition holders
+    time_cost += net_latency * (e * r2_max * p / m_n); //exchange new block references back to parition holders
     time_cost += r * (1-fp_ratio) * e / b_wd; //save new block references at partition holder
-    //Stage 4b - update index with new blocks and update dupnew results with references
+    //Stage 3b - update index with new blocks and update dupnew results with references
     time_cost += r * (1-fp_ratio) * e / b_d; //read new blocks for each partition from disk
     time_cost += r * dupnew_ratio * e / b_d; //read dupnew results for each partition
     time_cost += r * dupnew_ratio * lookup_time; //get references to the dupnew blocks
     time_cost += r * dupnew_ratio * e / b_wd; //add updated dup-new results to the list of dup results
     time_cost += r * (1-fp_ratio) * e / b_wd; //add new blocks to local partition index
-    //Stage 5 - exchange dup (including dupnew) references
-    time_cost += r * (fp_ratio - dupnew_ratio) * e / b_d; //read dup results from disk (including dupnew)
-    time_cost += net_latency * (e * r_max * (fp_ratio - dupnew_ratio) / m_n); //exchange references to dup blocks
-    time_cost += r * (fp_ratio) * e / b_wd; //save dup references to disk
-    //Stage 6 - update recipes with dup references (we already got the new references in Stage 3b)
-    //?
-    //Stage 7 - copy local index back to dfs
-    //?
+    //Stage 4a - exchange dup (including dupnew) references
+    time_cost += r * fp_ratio * e / b_d; //read dup results from disk (including dupnew)
+    time_cost += net_latency * (e * r_max * fp_ratio * p / m_n); //exchange references to dup blocks
+    time_cost += r_max * fp_ratio * e / b_wd; //save dup references to disk
+    //Stage 4b - sort and save recipes back to storage service (we ignore this for now)
 
     return time_cost;
 }
