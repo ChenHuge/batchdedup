@@ -1,9 +1,12 @@
 CXX := g++
 
 .PHONY: all
-all: batchsim
+all: batchsim wlgen
 
 batchsim: batchsim.o BackupScheduler.o
+	$(CXX) -o $@ $^
+
+wlgen: wlgen.o WLGenerator.o
 	$(CXX) -o $@ $^
 
 %.o: %.cpp %.h
