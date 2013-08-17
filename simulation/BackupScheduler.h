@@ -23,6 +23,18 @@ class NullScheduler : public BackupScheduler{
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();
 };
+
+class OneEachScheduler : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+};
+        
+class OneScheduler : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+};
         
 class CowScheduler : public BackupScheduler{
     public:

@@ -1,3 +1,15 @@
+//Backup Scheduling Simulator
+//To add a new scheduler:
+//  add a class that inherits from BackupScheduler (see BackupScheduler.h/.cpp)
+//  implement schedule_round and getName
+//    getName returns a name to print to the user during the run
+//    schedule_round returns true if there were vms to schedule, and false if there was nothing to schedule
+//    schedule_round fills up the round_schedule vector with machines/vms
+//    there must be one vector per machine, even if there was nothing scheduled on that machine (the vector count determines p)
+//      unless schedule_round returns false, in that case round_schedule is ignored
+//  add a line to usage() describing the scheduler (under Schedule Types)
+//  add 3 lines near the top of main() to parse the command line argument
+//    (just copy the nullschedule parsing and change the name, class name)
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -18,28 +30,34 @@ double model_cow(double size, double block_dirty_ratio, double backup_time);
 double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
 double model_round_cow(const vector<vector<double> > &machine_loads);
 
-#define DEFAULT_DIRTY_RATIO 0.012
-#define DEFAULT_SEGMENT_DIRTY_RATIO 0.5
+//#define DEFAULT_DIRTY_RATIO 0.10
+#define DEFAULT_SEGMENT_DIRTY_RATIO 0.2
 #define DEFAULT_FP_RATIO 0.5
 #define DEFAULT_DUPNEW_RATIO 0.01
 #define DEFAULT_NETWORK_LATENCY 0.0005
-#define DEFAULT_READ_BANDWIDTH 30.0
-#define DEFAULT_DISK_WRITE_BANDWIDTH 30.0
-#define DEFAULT_BACKEND_WRITE_BANDWIDTH 30.0
+#define DEFAULT_READ_BANDWIDTH 50.0
+#define DEFAULT_DISK_WRITE_BANDWIDTH 50.0
+#define DEFAULT_BACKEND_WRITE_BANDWIDTH 90000000.0
 #define DETECTION_REQUEST_SIZE 40.0
 #define DUPLICATE_SUMMARY_SIZE 48.0
+//4KB chunks
 #define CHUNK_SIZE 4096.0
+//2MB segments
 #define SEGMENT_SIZE (512.0*CHUNK_SIZE)
+//we define sizes in GB
 #define SIZE_UNIT (1<<30)
+//memory usage defined in MB
 #define MEMORY_UNIT (1<<20)
+//bandwidth defined in MB/s
 #define BANDWIDTH_UNIT (1<<20)
 #define DEFAULT_LOOKUP_TIME 0.000001
-#define DEFAULT_MACHINE_INDEX_SIZE (1024.0 / CHUNK_SIZE * (1<<30))
+//manually computed from x=10,fp=0.5,dirty=0.2,chunk=4096,s=40GB,v=25
+#define DEFAULT_MACHINE_INDEX_SIZE (262144000)
 #define DEFAULT_NETWORK_MEMORY 25.0
 #define DEFAULT_WRITE_RATE 5
 #define COW_CONSTANT 1
 
-double dirty_ratio = DEFAULT_DIRTY_RATIO;
+//double dirty_ratio = DEFAULT_DIRTY_RATIO;
 double segment_dirty_ratio = DEFAULT_SEGMENT_DIRTY_RATIO;
 double fp_ratio = DEFAULT_FP_RATIO;
 double dupnew_ratio = DEFAULT_DUPNEW_RATIO; //dup-new ratio, as a fration of r
@@ -60,7 +78,7 @@ void usage(const char* progname) {
         "Where <parameters> can be:" << endl <<
         "  --machinefile <path> - file containing list of files with machine loads" << endl <<
         "                       - each machine load should be a size in GB" << endl << 
-        "  --dirty <ratio> - default=" << DEFAULT_DIRTY_RATIO << endl <<
+        "  --segdirty <ratio> - default=" << DEFAULT_SEGMENT_DIRTY_RATIO << endl <<
         "  --netlatency <seconds> - default=" << DEFAULT_NETWORK_LATENCY << endl <<
         "  --readbandwidth <MB/s> - default=" << DEFAULT_READ_BANDWIDTH << endl <<
         "  --diskwritebandwidth <MB/s> - default=" << DEFAULT_DISK_WRITE_BANDWIDTH << endl <<
@@ -68,12 +86,16 @@ void usage(const char* progname) {
         "  --indexsize <machine_index_entries> - default=" << DEFAULT_MACHINE_INDEX_SIZE << endl <<
         "Schedule Types:" << endl <<
         "  --nullschedule - just schedule all the jobs at once" << endl <<
-        "  --cowschedule - just schedule all the jobs at once" << endl;
+        "  --oneschedule - schedule one vm in each round" << endl <<
+        "  --oneeachschedule - schedule one vm on each machine in each round" << endl <<
+        "  --cowschedule - just schedule all the jobs at once" << 
+        endl;
 }
 
 void print_settings() {
     cout << "Current Settings:" << endl <<
-        "  dirty ratio: " << dirty_ratio << endl <<
+        //"  dirty ratio: " << dirty_ratio << endl <<
+        "  segment dirty ratio: " << segment_dirty_ratio << endl <<
         "  fp ratio: " << fp_ratio << endl <<
         "  dupnew ratio: " << dupnew_ratio << endl <<
         "  network latency: " << net_latency << " seconds" << endl <<
@@ -103,8 +125,14 @@ int main (int argc, char *argv[]) {
         } else if (!strcmp(argv[argi],"--cowschedule")) {
             argi++;
             schedulers.push_back(new CowScheduler());
-        } else if (!strcmp(argv[argi],"--dirty")) {
-            dirty_ratio = strtod(argv[++argi],&endptr);
+        } else if (!strcmp(argv[argi],"--oneeachschedule")) {
+            argi++;
+            schedulers.push_back(new OneEachScheduler());
+        } else if (!strcmp(argv[argi],"--oneschedule")) {
+            argi++;
+            schedulers.push_back(new OneScheduler());
+        } else if (!strcmp(argv[argi],"--segdirty")) {
+            segment_dirty_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid dirty ratio or none given";
                 usage(argv[0]);
@@ -220,9 +248,10 @@ int main (int argc, char *argv[]) {
             total_time += round_time;
             total_cow += round_cow;
             schedule.clear();
+            round++;
         }
         cout << "  Total Time: " << format_time(total_time) << 
-            "; CoW Cost: " << total_cow << endl;
+            "; CoW Cost: " << total_cow << "GB" << endl;
     }
     for(std::vector<BackupScheduler*>::iterator it = schedulers.begin(); it != schedulers.end(); ++it) {
         delete *it;
@@ -266,9 +295,9 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
     double total_size = 0;
     double time_cost = 0;
     double p = machine_loads.size();
-    double b_d = read_bandwidth;
-    double b_wd = disk_write_bandwidth;
-    double b_wb = backend_write_bandwidth;
+    double b_r = read_bandwidth;
+    double b_w = disk_write_bandwidth;
+    double b_b = backend_write_bandwidth;
     double m_n = network_memory;
     for(vector<vector<double> >::const_iterator machine = machine_loads.begin(); machine != machine_loads.end(); ++machine) {
         double machine_cost = 0;
@@ -280,68 +309,69 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
         }
         total_size += machine_cost;
     }
-    double r = (total_size * dirty_ratio / c) * SIZE_UNIT; //avg num requests per machine
-    double r_max = (max_cost / c) * SIZE_UNIT; //requests from most heavily loaded machine
+    double r = (total_size * segment_dirty_ratio / c / p) * SIZE_UNIT; //avg num requests per machine
+    double r_max = (max_cost * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
     double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
-    //cout << "r_max=" << r_max << endl;
+    cout << "r=" << r << "; r_max=" << r_max << endl;
     double t;
 
     //Stage 1a - exchange dirty data
-    t = r_max * c / b_d; //read from disk
-    t += net_latency * (u * r_max * p / m_n); //transfer dirty data
-    t += u * r / b_wd; //save requests to disk
+    t = r_max * c / b_r; //read from disk
+    t += net_latency * (u * r_max / m_n); //transfer dirty data
+    t += u * r / b_w; //save requests to disk
     if (verbose) {
-        cout << "Stage 1a: " << format_time(t) << endl;
+        cout << "    Stage 1a: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 1b - handle dedup requests
-    t = r * u / b_d; //read requests from disk
-    t += n*e/b_d; //read one machine's worth of index from disk
+    t = r * u / b_r; //read requests from disk
+    t += n*e/b_r; //read one machine's worth of index from disk
     t += r * lookup_time; //perform lookups
-    t += r * e / b_d; //write out results of each lookup to one of 3 files per partition
+    t += r * e / b_w; //write out results of each lookup to one of 3 files per partition
     if (verbose) {
-        cout << "Stage 1b: " << format_time(t) << endl;
+        cout << "    Stage 1b: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 2a - exchange new block results
-    t = r * (1-fp_ratio) * e / b_d; //read new results from disk
-    t += net_latency * (e * r2_max * p / m_n); //exchange new blocks
-    t += r2_max * e / b_wd; //save new block results to disk
+    t = r * (1-fp_ratio) * e / b_r; //read new results from disk
+    t += net_latency * (e * r2_max / m_n); //exchange new blocks
+    t += r2_max * e / b_w; //save new block results to disk
     if (verbose) {
-        cout << "Stage 2a: " << format_time(t) << endl;
+        cout << "    Stage 2a: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 2b - save new blocks
-    t = r2_max * (e+c) / b_d; //read new block results from disk, and the associated blocks
-    t += r2_max * c / b_wb; //write new blocks to the backend - also update the lookup results
+    t = r2_max * e / b_r; //read new results from disk
+    t += r_max * c / b_r; //re-read dirty blocks
+    //t += r2_max * c / b_b; //write new blocks to the backend - also update the lookup results
     if (verbose) {
-        cout << "Stage 2b: " << format_time(t) << endl;
+        cout << "    Stage 2b: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 3a - exchange new block references
-    t = r2_max * e / b_wd; //re-read new block results from disk (now with references)
-    t += net_latency * (e * r2_max * p / m_n); //exchange new block references back to parition holders
-    t += r * (1-fp_ratio) * e / b_wd; //save new block references at partition holder
+    t = r2_max * e / b_r; //re-read new block results from disk (now with references)
+    t += net_latency * (e * r2_max / m_n); //exchange new block references back to parition holders
+    t += r * (1-fp_ratio) * e / b_w; //save new block references at partition holder
     if (verbose) {
-        cout << "Stage 3a: " << format_time(t) << endl;
+        cout << "    Stage 3a: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 3b - update index with new blocks and update dupnew results with references
-    t = r * (1-fp_ratio) * e / b_d; //read new blocks for each partition from disk
-    t += r * dupnew_ratio * e / b_d; //read dupnew results for each partition
+    t = r * (1-fp_ratio) * e / b_r; //read new blocks for each partition from disk
+    t += r * dupnew_ratio * e / b_r; //read dupnew results for each partition
     t += r * dupnew_ratio * lookup_time; //get references to the dupnew blocks
-    t += r * dupnew_ratio * e / b_wd; //add updated dup-new results to the list of dup results
-    t += r * (1-fp_ratio) * e / b_wd; //add new blocks to local partition index
+    t += r * dupnew_ratio * e / b_w; //add updated dup-new results to the list of dup results
+    t += r * (1-fp_ratio) * e / b_w; //add new blocks to local partition index
     if (verbose) {
-        cout << "Stage 3b: " << format_time(t) << endl;
+        cout << "    Stage 3b: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 4a - exchange dup (including dupnew) references
-    t = r * fp_ratio * e / b_d; //read dup results from disk (including dupnew)
-    t += net_latency * (e * r_max * fp_ratio * p / m_n); //exchange references to dup blocks
-    t += r_max * fp_ratio * e / b_wd; //save dup references to disk
+    t = r * fp_ratio * e / b_r; //read dup results from disk (including dupnew)
+    t += net_latency * (e * r_max * fp_ratio / m_n); //exchange references to dup blocks
+    t += r_max * fp_ratio * e / b_w; //save dup references to disk
     if (verbose) {
-        cout << "Stage 4a: " << format_time(t) << endl;
+        cout << "    Stage 4a: " << format_time(t) << endl;
     }
     time_cost += t;
     //Stage 4b - sort and save recipes back to storage service (we ignore this for now)
