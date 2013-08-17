@@ -5,7 +5,8 @@
 //    getName returns a name to print to the user during the run
 //    schedule_round returns true if there were vms to schedule, and false if there was nothing to schedule
 //    schedule_round fills up the round_schedule vector with machines/vms
-//    there must be one vector per machine, even if there was nothing scheduled on that machine (the vector count determines p)
+//    machines is a variable in the class (of type vector<vector<double> >) containing the remaining vms to schedule and which machine they are on
+//    there must be one vector per machine in round_schedule, even if there was nothing scheduled on that machine (the vector count determines p)
 //      unless schedule_round returns false, in that case round_schedule is ignored
 //  add a line to usage() describing the scheduler (under Schedule Types)
 //  add 3 lines near the top of main() to parse the command line argument
