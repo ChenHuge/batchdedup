@@ -40,4 +40,6 @@ class CowScheduler : public BackupScheduler{
     public:
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();
+    private:
+        vector<vector<vector<double> > > round_schedules;
 };

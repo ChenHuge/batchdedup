@@ -232,6 +232,14 @@ int main (int argc, char *argv[]) {
     //        cout << machinelist[i][j] << endl;
     //    }
     //}
+    int total_vms = 0;
+    int total_vm_size = 0;
+    for(vector<vector<double> >::const_iterator machine = machinelist.begin(); machine != machinelist.end(); ++machine) {
+        for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
+            total_vms++;
+            total_vm_size += *vm;
+        }
+    }
 
     for(std::vector<BackupScheduler*>::iterator scheduler = schedulers.begin(); scheduler != schedulers.end(); ++scheduler) {
         int round = 1;
@@ -244,14 +252,22 @@ int main (int argc, char *argv[]) {
         while((*scheduler)->schedule_round(schedule)) {
             double round_time = model_time(schedule, true);
             double round_cow = model_round_cow(schedule);
-            cout << "  Round " << round << ": Data Size=" << total_size(schedule) << "GB; Round Time=" << format_time(round_time) << 
+            int round_vms = 0;
+            double round_size = 0;
+            for(vector<vector<double> >::const_iterator machine = schedule.begin(); machine != schedule.end(); ++machine) {
+                round_vms += (*machine).size();
+                for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
+                    round_size += *vm;
+                }
+            }
+            cout << "  Round " << round << ": Data Size=" << round_size << "GB; VMs=" << round_vms << "; Round Time=" << format_time(round_time) << 
                 "; Round CoW: " << round_cow << "GB" << endl;
             total_time += round_time;
             total_cow += round_cow;
             schedule.clear();
             round++;
         }
-        cout << "  Total Time: " << format_time(total_time) << 
+        cout << "  Total Data: " << total_vm_size << "GB; Total VMs: " << total_vms << "; Total Time: " << format_time(total_time) << 
             "; CoW Cost: " << total_cow << "GB" << endl;
     }
     for(std::vector<BackupScheduler*>::iterator it = schedulers.begin(); it != schedulers.end(); ++it) {
@@ -313,7 +329,7 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
     double r = (total_size * segment_dirty_ratio / c / p) * SIZE_UNIT; //avg num requests per machine
     double r_max = (max_cost * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
     double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
-    cout << "r=" << r << "; r_max=" << r_max << endl;
+    //cout << "r=" << r << "; r_max=" << r_max << endl;
     double t;
 
     //Stage 1a - exchange dirty data
