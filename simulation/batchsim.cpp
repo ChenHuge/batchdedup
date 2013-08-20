@@ -34,6 +34,7 @@ double model_cow(double size, double block_dirty_ratio, double backup_time);
 double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
 double model_round_cow(const vector<vector<double> > &machine_loads);
 
+#define DEFAULT_TIME_LIMIT (60*60*3)
 //#define DEFAULT_DIRTY_RATIO 0.10
 #define DEFAULT_SEGMENT_DIRTY_RATIO 0.2
 #define DEFAULT_FP_RATIO 0.5
@@ -75,6 +76,7 @@ double model_round_cow(const vector<vector<double> > &machine_loads);
 
 //These globals define the actual parameters used in modeling
 //double dirty_ratio = DEFAULT_DIRTY_RATIO; //block dirty ratio not used
+double time_limit = DEFAULT_TIME_LIMIT;
 double segment_dirty_ratio = DEFAULT_SEGMENT_DIRTY_RATIO;
 double fp_ratio = DEFAULT_FP_RATIO;
 double dupnew_ratio = DEFAULT_DUPNEW_RATIO; //dup-new ratio, as a fration of r
@@ -288,6 +290,7 @@ int main (int argc, char *argv[]) {
         vector<vector<double> > schedule;
         cout << "Total data to schedule: " << total_size(machinelist) << "GB" << endl;
         (*scheduler)->setMachineList(machinelist);
+        (*scheduler)->setTimeLimit(time_limit);
         cout << "Scheduler: " << (*scheduler)->getName() << endl;
         while((*scheduler)->schedule_round(schedule)) {
             double round_time = model_time(schedule, true);

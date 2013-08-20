@@ -12,10 +12,12 @@ extern double model_round_cow(const vector<vector<double> > &machine_loads);
 class BackupScheduler {
     public:
         void setMachineList(std::vector<std::vector<double> > machine_loads);
+        void setTimeLimit(double seconds);
         virtual bool schedule_round(std::vector<std::vector<double> > &round_schedule) = 0;
         virtual const char * getName() = 0;
     protected:
         std::vector<std::vector<double> > machines;
+        double time_limit;
 };
 
 class NullScheduler : public BackupScheduler{

@@ -7,6 +7,10 @@ void BackupScheduler::setMachineList(vector<vector<double> > machine_loads) {
     machines=machine_loads;
 }
 
+void BackupScheduler::setTimeLimit(double seconds) {
+    time_limit = seconds;
+}
+
 
 bool NullScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
     if (machines.size() < 1) {
@@ -187,7 +191,8 @@ bool CowScheduler::schedule_round(std::vector<std::vector<double> > &round_sched
     ++dest_round;
 
     for(int r = 1; r < rounds; r++) {
-        int to_move = total_vms - r*(total_vms / rounds); //how many vms to push off to the next round
+        //to move right now performs an even split between rounds, should really be based on some heuristic
+        int to_move = total_vms - r*(total_vms / rounds);
         for(int i = 0; i < to_move; i++) {
             int mid;
             vector<double>::iterator max_vm = pick_vm(*source_round, mid);
