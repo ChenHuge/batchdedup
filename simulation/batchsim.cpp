@@ -42,7 +42,7 @@ double model_round_cow(const vector<vector<double> > &machine_loads);
 #define DEFAULT_NETWORK_LATENCY 0.0005
 #define DEFAULT_READ_BANDWIDTH 50.0
 #define DEFAULT_DISK_WRITE_BANDWIDTH 50.0
-#define DEFAULT_BACKEND_WRITE_BANDWIDTH 90000000.0
+//#define DEFAULT_BACKEND_WRITE_BANDWIDTH 90000000.0
 #define DETECTION_REQUEST_SIZE 40.0
 #define DUPLICATE_SUMMARY_SIZE 48.0
 //4KB chunks
@@ -83,7 +83,7 @@ double dupnew_ratio = DEFAULT_DUPNEW_RATIO; //dup-new ratio, as a fration of r
 double net_latency = DEFAULT_NETWORK_LATENCY;
 double read_bandwidth = DEFAULT_READ_BANDWIDTH;
 double disk_write_bandwidth = DEFAULT_DISK_WRITE_BANDWIDTH;
-double backend_write_bandwidth = DEFAULT_BACKEND_WRITE_BANDWIDTH;
+//double backend_write_bandwidth = DEFAULT_BACKEND_WRITE_BANDWIDTH;
 double lookup_time = DEFAULT_LOOKUP_TIME;
 double network_memory = DEFAULT_NETWORK_MEMORY;
 double write_rate = DEFAULT_WRITE_RATE;
@@ -103,7 +103,7 @@ void usage(const char* progname) {
         "  --netlatency <seconds> - default=" << DEFAULT_NETWORK_LATENCY << endl <<
         "  --readbandwidth <MB/s> - default=" << DEFAULT_READ_BANDWIDTH << endl <<
         "  --diskwritebandwidth <MB/s> - default=" << DEFAULT_DISK_WRITE_BANDWIDTH << endl <<
-        "  --backwritebandwidth <MB/s> - default=" << DEFAULT_BACKEND_WRITE_BANDWIDTH << endl <<
+        //"  --backwritebandwidth <MB/s> - default=" << DEFAULT_BACKEND_WRITE_BANDWIDTH << endl <<
         "  --indexsize <machine_index_entries> - default=" << DEFAULT_MACHINE_INDEX_SIZE << endl <<
         "Schedule Types:" << endl <<
         "  --nullschedule - just schedule all the jobs at once" << endl <<
@@ -122,7 +122,7 @@ void print_settings() {
         "  network latency: " << net_latency << " seconds" << endl <<
         "  disk read bandwidth: " << read_bandwidth << " MB/s" << endl <<
         "  disk write bandwidth: " << disk_write_bandwidth << " MB/s" << endl <<
-        "  backend write bandwidth: " << backend_write_bandwidth << " MB/s" << endl <<
+        //"  backend write bandwidth: " << backend_write_bandwidth << " MB/s" << endl <<
         "  fp lookup time: " << lookup_time << " seconds" << endl <<
         "  network memory usage: " << network_memory << " MB" << endl <<
         "  machine index size: " << n << " entries" << endl <<
@@ -198,13 +198,13 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
-        } else if (!strcmp(argv[argi],"--backwritebandwidth")) {
-            backend_write_bandwidth = strtod(argv[++argi],&endptr);
-            if (endptr == argv[argi]) {
-                cout << "invalid disk bandwidth or none given";
-                usage(argv[0]);
-                return -1;
-            }
+        //} else if (!strcmp(argv[argi],"--backwritebandwidth")) {
+        //    backend_write_bandwidth = strtod(argv[++argi],&endptr);
+        //    if (endptr == argv[argi]) {
+        //        cout << "invalid disk bandwidth or none given";
+        //        usage(argv[0]);
+        //        return -1;
+        //    }
         } else if (!strcmp(argv[argi],"--indexsize")) {
             n = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -230,7 +230,7 @@ int main (int argc, char *argv[]) {
     //convert bandwidths into bytes/sec
     read_bandwidth *= BANDWIDTH_UNIT;
     disk_write_bandwidth *= BANDWIDTH_UNIT;
-    backend_write_bandwidth *= BANDWIDTH_UNIT;
+    //backend_write_bandwidth *= BANDWIDTH_UNIT;
     
     //convert memory quantity to bytes
     network_memory *= MEMORY_UNIT;
@@ -297,15 +297,15 @@ int main (int argc, char *argv[]) {
             double round_cow = model_round_cow(schedule);
             int round_vms = 0;
             double round_size = 0;
-            cout << "Round loads:" << endl;
+            //cout << "Round loads:" << endl;
             for(vector<vector<double> >::const_iterator machine = schedule.begin(); machine != schedule.end(); ++machine) {
                 round_vms += (*machine).size();
-                cout << "  >";
+                //cout << "  >";
                 for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
                     round_size += *vm;
-                    cout << " " << *vm;
+                    //cout << " " << *vm;
                 }
-                cout << endl;
+                //cout << endl;
             }
             cout << "  Round " << round << ": Data Size=" << round_size << "GB; VMs=" << round_vms << "; Round Time=" << format_time(round_time) << 
                 "; Round CoW: " << round_cow << "GB" << endl;
@@ -366,7 +366,7 @@ double model_cow_time(const vector<vector<double> > &machine_loads, bool verbose
     double p = machine_loads.size();
     double b_r = read_bandwidth;
     double b_w = disk_write_bandwidth;
-    double b_b = backend_write_bandwidth;
+    //double b_b = backend_write_bandwidth;
     double m_n = network_memory;
     for(vector<vector<double> >::const_iterator machine = machine_loads.begin(); machine != machine_loads.end(); ++machine) {
         double machine_cost = 0;
@@ -429,7 +429,7 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
     double p = machine_loads.size();
     double b_r = read_bandwidth;
     double b_w = disk_write_bandwidth;
-    double b_b = backend_write_bandwidth;
+    //double b_b = backend_write_bandwidth;
     double m_n = network_memory;
     for(vector<vector<double> >::const_iterator machine = machine_loads.begin(); machine != machine_loads.end(); ++machine) {
         double machine_cost = 0;
