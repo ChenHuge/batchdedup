@@ -94,11 +94,11 @@ const char * OneScheduler::getName() {
     return "One Scheduler";
 }
 
-vector<double>::iterator find_max(vector<vector<double> > &machines, int &mid) {
-    //cout << "finding vm with max ucow..." << endl;
+//picks the vm with the highest ucow
+//for vms with equal ucow, picks the vm on the machine with the greatest load
+vector<double>::iterator pick_vm(vector<vector<double> > &machines, int &mid) {
     mid = 0;
     double schedule_time = model_time(machines, false);
-    //cout << "  initializing max vm..." << endl;
     vector<double>::iterator max_vm = machines[0].end();
     for(int i = 0; i < machines.size(); i++) {
         if (!machines[i].empty()) {
@@ -107,20 +107,29 @@ vector<double>::iterator find_max(vector<vector<double> > &machines, int &mid) {
             break;
         }
     }
-    //cout << "  searching for max ucow..." << endl;
     
     double max_cow = model_unneccessary_cow(*max_vm, 0.2, schedule_time);
+    double max_cow_load = 0;
+
+    for(vector<double>::iterator vm = machines[mid].begin(); vm != machines[mid].end(); ++vm) {
+        max_cow_load += *vm;
+    }
+
     for(int i = 0; i < machines.size(); i++) {
+        double machine_load = 0;
+        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
+            machine_load += *vm;
+        }
         for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
             double cow = model_unneccessary_cow(*vm, 0.2, schedule_time);
-            if (cow > max_cow) {
+            if (cow > max_cow || (cow == max_cow && machine_load > max_cow_load)) {
                 mid = i;
                 max_vm = vm;
                 max_cow = cow;
+                max_cow_load = machine_load;
             }
         }
     }
-    //cout << "returning vm with max ucow" << endl;
     return max_vm;
 }
 
@@ -153,57 +162,45 @@ bool CowScheduler::schedule_round(std::vector<std::vector<double> > &round_sched
     //cout << "creating empty schedules..." << endl;
     int rounds = 3; //arbitraily chosen, should be algorithmically chosen
     vector<vector<double> > machine_schedule;
+    round_schedules.push_back(machine_schedule); //empty schedule which we will initially fill with everything
     for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
         vector<double> vmschedule;
         machine_schedule.push_back(vmschedule);
     }
+    int total_machines = machines.size();
     for(int i = 1; i < rounds; i++) {
         round_schedules.push_back(machine_schedule);
     }
-
-    //cout << "scheduling to one round..." << endl;
 
     int total_vms = 0;
     for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine)
     {
         total_vms += (*machine).size();
     }
-    int to_move = total_vms - (total_vms / rounds); //how many vms to push off to a later round
 
-    round_schedule.insert(round_schedule.end(), machines.begin(), machines.end());
+    round_schedules[0].insert(round_schedules[0].end(), machines.begin(), machines.end());
     machines.clear();
 
 
-    for(int i = 0; i < to_move; i++) {
-        //cout << "scheduling vm..." << endl;
-        int mid;
-        vector<double>::iterator max_vm = find_max(round_schedule, mid);
-        vector<vector<vector<double> > >::iterator schedule = round_schedules.begin();
-        vector<vector<vector<double> > >::iterator min_schedule = round_schedules.begin();
-        //cout << "finding round with smallest ucow..." << endl;
-        //cout << "  initializing min ucow..." << endl;
-        double min_cow = model_unneccessary_cow(*max_vm, 0.2, model_time(*min_schedule, false));
-        while (schedule != round_schedules.end()) {
-            //cout << "  modeling time..." << endl;
-            double schedule_time = model_time(*schedule, false);
-            //cout << "  modeling ucow..." << endl;
-            double schedule_cow = model_unneccessary_cow(*max_vm, 0.2, schedule_time);
-            if (schedule_cow < min_cow) {
-                min_cow = schedule_cow;
-                min_schedule = schedule;
-            }
-            ++schedule;
-        }
-        //cout << "scheduling vm to round..." << endl;
-        (*min_schedule)[mid].push_back(*max_vm);
-        //cout << "clearing vm from round 0..." << endl;
-        //print_loads(round_schedules[0]);
-        round_schedule[mid].erase(max_vm);
-        //cout << "  done..." << endl;
-    }
-    cout << "loading round schedule..." << endl;
+    vector<vector<vector<double> > >::iterator source_round = round_schedules.begin();
+    vector<vector<vector<double> > >::iterator dest_round = round_schedules.begin();
+    ++dest_round;
 
-    cout << "returning round schedule..." << endl;
+    for(int r = 1; r < rounds; r++) {
+        int to_move = total_vms - r*(total_vms / rounds); //how many vms to push off to the next round
+        for(int i = 0; i < to_move; i++) {
+            int mid;
+            vector<double>::iterator max_vm = pick_vm(*source_round, mid);
+            (*dest_round)[mid].push_back(*max_vm);
+            (*source_round)[mid].erase(max_vm);
+        }
+        ++source_round;
+        ++dest_round;
+    }
+
+
+    round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+    round_schedules.pop_back();
 
     return true;
 }
