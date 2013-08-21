@@ -34,6 +34,7 @@ double model_cow(double size, double block_dirty_ratio, double backup_time);
 double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
 double model_round_cow(const vector<vector<double> > &machine_loads);
 
+//#define DEFAULT_TIME_LIMIT (60*60*3)
 #define DEFAULT_TIME_LIMIT (60*60*3)
 //#define DEFAULT_DIRTY_RATIO 0.10
 #define DEFAULT_SEGMENT_DIRTY_RATIO 0.2
@@ -103,13 +104,15 @@ void usage(const char* progname) {
         "  --netlatency <seconds> - default=" << DEFAULT_NETWORK_LATENCY << endl <<
         "  --readbandwidth <MB/s> - default=" << DEFAULT_READ_BANDWIDTH << endl <<
         "  --diskwritebandwidth <MB/s> - default=" << DEFAULT_DISK_WRITE_BANDWIDTH << endl <<
+        "  --timelimit <seconds> - default=" << DEFAULT_TIME_LIMIT << endl <<
         //"  --backwritebandwidth <MB/s> - default=" << DEFAULT_BACKEND_WRITE_BANDWIDTH << endl <<
         "  --indexsize <machine_index_entries> - default=" << DEFAULT_MACHINE_INDEX_SIZE << endl <<
         "Schedule Types:" << endl <<
         "  --nullschedule - just schedule all the jobs at once" << endl <<
         "  --oneschedule - schedule one vm in each round" << endl <<
         "  --oneeachschedule - schedule one vm on each machine in each round" << endl <<
-        "  --cowschedule - just schedule all the jobs at once" << 
+        "  --cowschedule - basic cow based scheduler" << 
+        "  --dbpschedule - more advanced scheduler based on Dual Bin Packing" << 
         endl;
 }
 
@@ -126,6 +129,7 @@ void print_settings() {
         "  fp lookup time: " << lookup_time << " seconds" << endl <<
         "  network memory usage: " << network_memory << " MB" << endl <<
         "  machine index size: " << n << " entries" << endl <<
+        "  time limit: " << format_time(time_limit) << endl <<
         "  c=" << c << "; u=" << u << "; e=" << e << endl;
 }
 
@@ -151,6 +155,9 @@ int main (int argc, char *argv[]) {
         } else if (!strcmp(argv[argi],"--oneschedule")) {
             argi++;
             schedulers.push_back(new OneScheduler());
+        } else if (!strcmp(argv[argi],"--dbpschedule")) {
+            argi++;
+            schedulers.push_back(new DBPScheduler());
         } 
         //Below here is the arg parsing for modeling parameters
         else if (!strcmp(argv[argi],"--machinefile") || !strcmp(argv[argi],"-m")) {
@@ -163,6 +170,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else if (!strcmp(argv[argi],"--fpratio")) {
             fp_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -170,6 +178,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else if (!strcmp(argv[argi],"--dupnewratio")) {
             dupnew_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -177,6 +186,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else if (!strcmp(argv[argi],"--netlatency")) {
             net_latency = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -184,6 +194,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else if (!strcmp(argv[argi],"--readbandwidth")) {
             read_bandwidth = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -191,6 +202,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else if (!strcmp(argv[argi],"--diskwritebandwidth")) {
             disk_write_bandwidth = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -198,6 +210,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         //} else if (!strcmp(argv[argi],"--backwritebandwidth")) {
         //    backend_write_bandwidth = strtod(argv[++argi],&endptr);
         //    if (endptr == argv[argi]) {
@@ -205,6 +218,14 @@ int main (int argc, char *argv[]) {
         //        usage(argv[0]);
         //        return -1;
         //    }
+        } else if (!strcmp(argv[argi],"--timelimit")) {
+            time_limit = strtod(argv[++argi],&endptr);
+            if (endptr == argv[argi]) {
+                cout << "invalid time limit or none given";
+                usage(argv[0]);
+                return -1;
+            }
+            argi++;
         } else if (!strcmp(argv[argi],"--indexsize")) {
             n = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
@@ -212,6 +233,7 @@ int main (int argc, char *argv[]) {
                 usage(argv[0]);
                 return -1;
             }
+            argi++;
         } else {
             cout << "Unknown argument: " << argv[argi] << endl;
             usage(argv[0]);
