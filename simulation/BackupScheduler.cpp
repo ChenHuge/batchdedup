@@ -254,7 +254,7 @@ void DBPScheduler::schedule_vms(vector<vector<double> > &machines) {
     //Note: A(I,N) returns the minimum bin level for packing set I into N bins
 
     //My scheduler (based on iterated "A"):
-    //1. Set UB=total_vms/machine_count*2
+    //1. Set UB=min(n,2*total_vms/machine_count)
     //2. Set LB=1
     //3. while UB>LB
     //  a. set N = (UB+LB+1)/2
@@ -281,6 +281,9 @@ void DBPScheduler::schedule_vms(vector<vector<double> > &machines) {
     //}
     cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
     int UB = 2*total_count/machines.size(); //one vm per machine per round
+    if (UB > total_count) {
+        UB = total_count;
+    }
     int LB = 1;
     while (UB > LB) {
         int N=(UB+LB+1)/2;
