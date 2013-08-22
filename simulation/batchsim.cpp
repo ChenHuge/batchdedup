@@ -113,6 +113,7 @@ void usage(const char* progname) {
         "  --oneeachschedule - schedule one vm on each machine in each round" << endl <<
         "  --cowschedule - basic cow based scheduler" << 
         "  --dbpschedule - more advanced scheduler based on Dual Bin Packing" << 
+        "  --dbpn1schedule - Naive Dual Bin Packing scheduler" << 
         endl;
 }
 
@@ -158,6 +159,9 @@ int main (int argc, char *argv[]) {
         } else if (!strcmp(argv[argi],"--dbpschedule")) {
             argi++;
             schedulers.push_back(new DBPScheduler());
+        } else if (!strcmp(argv[argi],"--dbpn1schedule")) {
+            argi++;
+            schedulers.push_back(new DBPN1Scheduler());
         } 
         //Below here is the arg parsing for modeling parameters
         else if (!strcmp(argv[argi],"--machinefile") || !strcmp(argv[argi],"-m")) {

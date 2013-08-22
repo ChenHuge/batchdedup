@@ -23,4 +23,4 @@ wlgen: wlgen.o WLGenerator.o
 
 .PHONY: clean
 clean:
-	rm -f batchsim *.o
+	rm -f wlgen batchsim *.o
