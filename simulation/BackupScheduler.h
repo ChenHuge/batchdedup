@@ -4,6 +4,7 @@ using namespace std;
 
 extern double total_size(const vector<vector<double> > &machine_loads);
 extern double model_time(const vector<vector<double> > &machine_loads, bool verbose);
+extern double model_time2(const vector<vector<double> > &machine_loads, int mid, int vmsize, bool verbose);
 extern double model_vm_time(double vm_load, bool verbose);
 extern double model_cow(double size, double block_dirty_ratio, double backup_time);
 extern double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
@@ -56,7 +57,27 @@ class DBPScheduler : public BackupScheduler{
         void schedule_vms(vector<vector<double> > &machines);
 };
 
+class DBPScheduler2 : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+    private:
+        vector<vector<vector<double> > > round_schedules;
+        double pack_vms(vector<vector<double> > machines,int rounds);
+        void schedule_vms(vector<vector<double> > &machines);
+};
+
 class DBPN1Scheduler : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+    private:
+        vector<vector<vector<double> > > round_schedules;
+        double pack_vms(vector<vector<double> > machines,int rounds);
+        void schedule_vms(vector<vector<double> > &machines);
+};
+
+class DBPN2Scheduler : public BackupScheduler{
     public:
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();

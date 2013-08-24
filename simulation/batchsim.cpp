@@ -27,12 +27,15 @@ using namespace std;
 string format_time(double seconds);
 double total_size(const vector<vector<double> > &machine_loads);
 double model_cow_time(const vector<vector<double> > &machine_loads, bool verbose);
+double model_cow_time(double max_size, double total_size, int p, bool verbose);
 double model_time(const vector<vector<double> > &machine_loads, bool verbose);
+double model_time(double max_size, double total_size, int p, bool verbose);
 double model_vm_time(double vm_load, bool verbose);
 double model_vm_cow_time(double vm_load, bool verbose);
 double model_cow(double size, double block_dirty_ratio, double backup_time);
 double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
 double model_round_cow(const vector<vector<double> > &machine_loads);
+double measure_load(const vector<vector<double> > &machine_loads, double &max_size, int &max_mid);
 
 //#define DEFAULT_TIME_LIMIT (60*60*3)
 #define DEFAULT_TIME_LIMIT (60*60*3)
@@ -159,9 +162,15 @@ int main (int argc, char *argv[]) {
         } else if (!strcmp(argv[argi],"--dbpschedule")) {
             argi++;
             schedulers.push_back(new DBPScheduler());
+        } else if (!strcmp(argv[argi],"--dbpschedule2")) {
+            argi++;
+            schedulers.push_back(new DBPScheduler2());
         } else if (!strcmp(argv[argi],"--dbpn1schedule")) {
             argi++;
             schedulers.push_back(new DBPN1Scheduler());
+        } else if (!strcmp(argv[argi],"--dbpn2schedule")) {
+            argi++;
+            schedulers.push_back(new DBPN2Scheduler());
         } 
         //Below here is the arg parsing for modeling parameters
         else if (!strcmp(argv[argi],"--machinefile") || !strcmp(argv[argi],"-m")) {
@@ -383,92 +392,15 @@ double total_size(const vector<vector<double> > &machine_loads) {
     return total_size;
 }
 
-//uses the time model to compute how long a given round schedule would take, and optionally prints stage times
-//only goes through stage 2b (which is when CoW can be released)
-double model_cow_time(const vector<vector<double> > &machine_loads, bool verbose) {
-    double max_cost = 0;
-    double total_size = 0;
+double model_time(double max_size, double total_size, int p, bool verbose) {
     double time_cost = 0;
-    double p = machine_loads.size();
     double b_r = read_bandwidth;
     double b_w = disk_write_bandwidth;
     //double b_b = backend_write_bandwidth;
     double m_n = network_memory;
-    for(vector<vector<double> >::const_iterator machine = machine_loads.begin(); machine != machine_loads.end(); ++machine) {
-        double machine_cost = 0;
-        for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
-            machine_cost += (*vm);
-        }
-        if (machine_cost > max_cost) {
-            max_cost = machine_cost;
-        }
-        total_size += machine_cost;
-    }
+
     double r = (total_size * segment_dirty_ratio / c / p) * SIZE_UNIT; //avg num requests per machine
-    double r_max = (max_cost * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
-    double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
-    //cout << "r=" << r << "; r_max=" << r_max << endl;
-    double t;
-
-    //Stage 1a - exchange dirty data
-    t = r_max * c / b_r; //read from disk
-    t += net_latency * (u * r_max / m_n); //transfer dirty data
-    t += u * r / b_w; //save requests to disk
-    if (verbose) {
-        cout << "    Stage 1a: " << format_time(t) << endl;
-    }
-    time_cost += t;
-    //Stage 1b - handle dedup requests
-    t = r * u / b_r; //read requests from disk
-    t += n*e/b_r; //read one machine's worth of index from disk
-    t += r * lookup_time; //perform lookups
-    t += r * e / b_w; //write out results of each lookup to one of 3 files per partition
-    if (verbose) {
-        cout << "    Stage 1b: " << format_time(t) << endl;
-    }
-    time_cost += t;
-    //Stage 2a - exchange new block results
-    t = r * (1-fp_ratio) * e / b_r; //read new results from disk
-    t += net_latency * (e * r2_max / m_n); //exchange new blocks
-    t += r2_max * e / b_w; //save new block results to disk
-    if (verbose) {
-        cout << "    Stage 2a: " << format_time(t) << endl;
-    }
-    time_cost += t;
-    //Stage 2b - save new blocks
-    t = r2_max * e / b_r; //read new results from disk
-    t += r_max * c / b_r; //re-read dirty blocks
-    //t += r2_max * c / b_b; //write new blocks to the backend - also update the lookup results
-    if (verbose) {
-        cout << "    Stage 2b: " << format_time(t) << endl;
-    }
-    time_cost += t;
-
-    return time_cost;
-}
-
-//uses the time model to compute how long a given round schedule would take, and optionally prints stage times
-double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
-    double max_cost = 0;
-    double total_size = 0;
-    double time_cost = 0;
-    double p = machine_loads.size();
-    double b_r = read_bandwidth;
-    double b_w = disk_write_bandwidth;
-    //double b_b = backend_write_bandwidth;
-    double m_n = network_memory;
-    for(vector<vector<double> >::const_iterator machine = machine_loads.begin(); machine != machine_loads.end(); ++machine) {
-        double machine_cost = 0;
-        for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
-            machine_cost += (*vm);
-        }
-        if (machine_cost > max_cost) {
-            max_cost = machine_cost;
-        }
-        total_size += machine_cost;
-    }
-    double r = (total_size * segment_dirty_ratio / c / p) * SIZE_UNIT; //avg num requests per machine
-    double r_max = (max_cost * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
+    double r_max = (max_size * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
     double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
     //cout << "r=" << r << "; r_max=" << r_max << endl;
     double t;
@@ -535,6 +467,113 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
     //Stage 4b - sort and save recipes back to storage service (we ignore this for now)
 
     return time_cost;
+
+}
+
+double model_cow_time(double max_size, double total_size, int p, bool verbose) {
+    double time_cost = 0;
+    double b_r = read_bandwidth;
+    double b_w = disk_write_bandwidth;
+    //double b_b = backend_write_bandwidth;
+    double m_n = network_memory;
+
+    double r = (total_size * segment_dirty_ratio / c / p) * SIZE_UNIT; //avg num requests per machine
+    double r_max = (max_size * segment_dirty_ratio / c) * SIZE_UNIT; //requests from most heavily loaded machine
+    double r2_max = r_max * (1-fp_ratio); //number of new blocks at most heavily loaded machine; Not a real variable, but used often
+    //cout << "r=" << r << "; r_max=" << r_max << endl;
+    double t;
+
+    //Stage 1a - exchange dirty data
+    t = r_max * c / b_r; //read from disk
+    t += net_latency * (u * r_max / m_n); //transfer dirty data
+    t += u * r / b_w; //save requests to disk
+    if (verbose) {
+        cout << "    Stage 1a: " << format_time(t) << endl;
+    }
+    time_cost += t;
+    //Stage 1b - handle dedup requests
+    t = r * u / b_r; //read requests from disk
+    t += n*e/b_r; //read one machine's worth of index from disk
+    t += r * lookup_time; //perform lookups
+    t += r * e / b_w; //write out results of each lookup to one of 3 files per partition
+    if (verbose) {
+        cout << "    Stage 1b: " << format_time(t) << endl;
+    }
+    time_cost += t;
+    //Stage 2a - exchange new block results
+    t = r * (1-fp_ratio) * e / b_r; //read new results from disk
+    t += net_latency * (e * r2_max / m_n); //exchange new blocks
+    t += r2_max * e / b_w; //save new block results to disk
+    if (verbose) {
+        cout << "    Stage 2a: " << format_time(t) << endl;
+    }
+    time_cost += t;
+    //Stage 2b - save new blocks
+    t = r2_max * e / b_r; //read new results from disk
+    t += r_max * c / b_r; //re-read dirty blocks
+    //t += r2_max * c / b_b; //write new blocks to the backend - also update the lookup results
+    if (verbose) {
+        cout << "    Stage 2b: " << format_time(t) << endl;
+    }
+    time_cost += t;
+
+    return time_cost;
+}
+
+double measure_load(const vector<vector<double> > &machine_loads, double &max_size, int &max_mid) {
+    max_size = 0;
+    max_mid = 0;
+    double total_size = 0;
+    for(int i = 0; i < machine_loads.size(); i++) {
+        double machine_size = 0;
+        for(vector<double>::const_iterator vm = machine_loads[i].begin(); vm != machine_loads[i].end(); ++vm) {
+            machine_size += (*vm);
+        }
+        if (machine_size > max_size) {
+            max_size = machine_size;
+            max_mid = i;
+        }
+        total_size += machine_size;
+    }
+    return total_size;
+}
+
+//uses the time model to compute how long a given round schedule would take, and optionally prints stage times
+//only goes through stage 2b (which is when CoW can be released)
+double model_cow_time(const vector<vector<double> > &machine_loads, bool verbose) {
+    double max_size;
+    int mid;
+    double total_size = measure_load(machine_loads, max_size, mid);
+    return model_cow_time(max_size,total_size, machine_loads.size(),verbose);
+}
+
+//uses the time model to compute how long a given round schedule would take, and optionally prints stage times
+double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
+    double max_size;
+    int mid;
+    double total_size = measure_load(machine_loads, max_size, mid);
+    return model_time(max_size,total_size, machine_loads.size(),verbose);
+}
+
+//uses the time model to compute how long a given round schedule would take, and optionally prints stage times
+//allows for modification of the load on one machine (adds load of size <vmsize> to machine <mid>
+double model_time2(const vector<vector<double> > &machine_loads, int mid, int vmsize, bool verbose) {
+    double max_size = 0;
+    double total_size = 0;
+    for(int i = 0; i < machine_loads.size(); i++) {
+        double machine_size = 0;
+        if (i == mid) {
+            machine_size += vmsize;
+        }
+        for(vector<double>::const_iterator vm = machine_loads[i].begin(); vm != machine_loads[i].end(); ++vm) {
+            machine_size += (*vm);
+        }
+        if (machine_size > max_size) {
+            max_size = machine_size;
+        }
+        total_size += machine_size;
+    }
+    return model_time(max_size,total_size, machine_loads.size(),verbose);
 }
 
 //gets the minimum backup time for a given vm (backing up only that vm)
