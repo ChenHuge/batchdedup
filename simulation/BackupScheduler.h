@@ -9,6 +9,8 @@ extern double model_vm_time(double vm_load, bool verbose);
 extern double model_cow(double size, double block_dirty_ratio, double backup_time);
 extern double model_unneccessary_cow(double size, double block_dirty_ratio, double backup_time);
 extern double model_round_cow(const vector<vector<double> > &machine_loads);
+extern double measure_load(const vector<vector<double> > &machine_loads, double &max_size, int &max_mid);
+extern double model_time(double max_size, double total_size, int p, bool verbose);
 
 class BackupScheduler {
     public:

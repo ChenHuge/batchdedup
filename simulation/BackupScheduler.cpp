@@ -187,7 +187,10 @@ double model_new_time(const vector<vector<double> > &machines, int mid, int vm) 
 //picks the vm whose removal will most decrease round time
 //tie-breaker:machine with greatest load
 vector<double>::iterator pick_max_tdelta_vm(vector<vector<double> > &machines, int &mid) {
-    double schedule_time = model_time(machines, false);
+    double max_size;
+    int max_mid;
+    double total_size = measure_load(machines, max_size,max_mid);
+    double schedule_time = model_time(total_size, max_size, machines.size(), false);
     vector<double>::iterator best_vm = machines[0].end();
     mid = -1;
     
@@ -200,7 +203,14 @@ vector<double>::iterator pick_max_tdelta_vm(vector<vector<double> > &machines, i
             machine_load += *vm;
         }
         for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
-            double rtime = model_rtime(machines, i, *vm);
+            double rtime;
+            //if we are removing from the max machine, we must recompute max_size
+            if (max_mid == i) {
+                rtime = model_rtime(machines, i, *vm);
+            } else {
+                rtime = model_time(total_size - *vm, max_size, machines.size() - 1, false);
+            }
+            //if we haven't picked yet, or if the single round time is lower by picking this VM, or if machine round is greater and it's a tie
             if (best_vm == machines[0].end() || rtime < best_time || (rtime == best_time && machine_load > best_time_load)) {
                 mid = i;
                 best_vm = vm;
@@ -212,6 +222,7 @@ vector<double>::iterator pick_max_tdelta_vm(vector<vector<double> > &machines, i
     return best_vm;
 }
 
+//pick round for which this vm has the smallest ucow
 vector<vector<vector<double> > >::iterator pick_min_ucow_round(vector<vector<vector<double> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
     vector<vector<vector<double> > >::iterator best_round = round_schedules.begin();
     double best_ucow = model_unneccessary_cow(*vm, 0.2, model_time(*best_round,false));
@@ -229,11 +240,15 @@ vector<vector<vector<double> > >::iterator pick_min_ucow_round(vector<vector<vec
 
 //finds the round which will be the shortest in duration after adding the vm
 vector<vector<vector<double> > >::iterator pick_min_newtime_round(vector<vector<vector<double> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
+    //double max_size;
+    //int max_mid;
+    //double total_size = measure_load(machines, max_size,max_mid);
+    //double schedule_time = model_time(total_size, max_size, machines.size(), false);
+
     vector<vector<vector<double> > >::iterator best_round = round_schedules.end();
     double best_time;
     for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        //double time = model_time_delta(*round, mid, *vm);
         double time = model_new_time(*round, mid, *vm);
         if (best_round == round_schedules.end() || time < best_time) {
             best_round = round;
@@ -243,7 +258,7 @@ vector<vector<vector<double> > >::iterator pick_min_newtime_round(vector<vector<
     return best_round;
 }
 
-//finds the round which will be the shortest in duration after adding the vm
+//finds the round which is currently shortest in duration
 vector<vector<vector<double> > >::iterator pick_min_time_round(vector<vector<vector<double> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
     vector<vector<vector<double> > >::iterator best_round = round_schedules.end();
     double best_time;
