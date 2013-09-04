@@ -2,11 +2,12 @@
 # the queue I'm using for this job
 #PBS -q hotel
 # the title I'm giving my job
-#PBS -N mpi_batchdedup
+#PBS -N batchdedup
 # the number of nodes, and processors per node
-#PBS -l nodes=10:ppn=1
+#:ib inidcates the high speed network is required (some nodes aren't connected)
+#PBS -l nodes=10:ppn=1:ib
 # the maximum time to run the job
-#PBS -l walltime=0:59:00
+#PBS -l walltime=1:30:00
 
 #PBS -e err.$PBS_JOBID
 #PBS -o out.$PBS_JOBID
@@ -18,7 +19,7 @@
 export MX_RCACHE=0
 
 partitions=1000
-vmspernode=250
+totalvms=50
 ssid=0
 #multipy mpibuf by 2p for memory usage
 mpibufsize=128
@@ -29,28 +30,28 @@ wbufsize=64
 #also consider partition index memory usage
 rpath=/oasis/tscc/scratch/mdagun
 lpath=$TMPDIR
-hpath=/home/mdagun/batchdedup_home/test_ssid_3
+hpath=/home/mdagun/batchdedup_home/test_ssid_9
 ssfile=/home/mdagun/batchdedup_home/sample_vms/sample_vm_list.txt
 
 if [[ "$PBS_NODENUM" == "0" ]]; then
     rm -r $rpath/$partitions
 fi
-mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
-#ssid=1
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
-#ssid=2
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+ssid=1
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+ssid=2
+mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=3
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=4
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=5
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=6
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=7
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=8
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
 #ssid=9
-#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $vmspernode --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile
+#mpirun -v -machinefile $PBS_NODEFILE -np `wc -l < $PBS_NODEFILE` ~/batchdedup/trunk/src/batch_dedup --partitions $partitions --nodevms $totalvms --ssid $ssid --mpibufsize $mpibufsize --rbufsize $rbufsize --wbufsize $wbufsize --remotepath $rpath --localpath $lpath --homepath $hpath --snapshotfile $ssfile

@@ -53,6 +53,7 @@ RawRecordAccumulator::RawRecordAccumulator()
         mWriterPtrs[partid % num_parts] = 
             new RecordWriter<Block>(Env::GetStep2InputName(partid));
     }
+    mStatRecordCount = 0;
 }
 
 RawRecordAccumulator::~RawRecordAccumulator()
