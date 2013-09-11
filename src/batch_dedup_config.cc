@@ -4,6 +4,8 @@
 #include <sstream>
 #include <sys/stat.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 const double   VM_SEG_CHANGE_RATE   = 0.5;
 const double   VM_BLOCK_CHANGE_RATE = 0.5;
@@ -13,6 +15,7 @@ const int      MAX_NUM_SNAPSHOTS    = 100;
 const uint16_t BLOCK_CLEAN_FLAG     = 0;
 const uint16_t BLOCK_DIRTY_FLAG     = 1;
 
+int            Env::mRound = -1;
 int            Env::mRank = -1;
 int            Env::mNumTasks = -1;
 int            Env::mNumPartitions = -1;
@@ -24,12 +27,47 @@ char*          Env::mRecvBuf = NULL;
 size_t         Env::mReadBufSize = 0;
 size_t         Env::mWriteBufSize = 0;
 vector<string> Env::mSampleTraces; // a list of sample trace files
-vector<int>    Env::mMyVmIds; // a list of VM IDs that belong to this MPI instance
+//vector<int>    Env::mMyVmIds; // a list of VM IDs that belong to this MPI instance for this backup round
+vector<vector<int> > mMyVmSchedule; //list of VM IDs for this instance to backup in each round
 string         Env::mLocalPath; // path to local storage
 string         Env::mRemotePath; // path to remote storage (lustre)
 string         Env::mHomePath; // path to home directory
 ofstream       Env::mLogger;
 size_t         Env::mIndexSize = 0;
+
+void Env::ScheduleVMs(RoundScheduler scheduler)
+{
+    size_t num_samples = mSampleTraces.size();
+    vector<double> samplesizes;
+    
+    for(int i = 0; i < num_samples; i++) {
+        string sample_path = GetSampleTrace(i);
+        struct stat filestatus;
+        stat( sample_path.c_str(), &filestatus );
+        //36 bytes per chunk entry, avg chunk size 4.5KB
+        samplesizes.push_back((filestatus.st_size/36)*1024*4.5);
+    }
+    vector<vector<double> > loads;
+    int vmid = 0;
+    for (int i = 0; i < mNumVms; i++) {
+        if (i % mNumTasks == mRank) {
+            if (loads.size < i % mNumTasks) {
+                vector<double> empty_machine;
+                loads.push_back(empty_machine);
+            }
+            loads[i % mNumTasks].push_back(samplesizes[i % num_samples]);
+        }
+    }
+    //first construct vm/machine loads (we need to estimate machine size for this)
+    //then run scheduler until finished,
+    //adding this machine's schedule for each round
+    scheduler.setMachineList(loads);
+    scheduler.setTimeLimit(60*60*3);
+    vector<vector<int> > round schedule;
+    while (scheduler.schedule_round(round_schedule)) {
+        mMyVmSchedule.push_back(round_schedule[mRank]);
+    }
+}
 
 void Env::SetRank(int rank) 
 { 
@@ -39,6 +77,17 @@ void Env::SetRank(int rank)
 int Env::GetRank() 
 { 
     return mRank; 
+}
+
+void Env::InitRound(int r)
+{
+    mRound = r;
+    mMyVmIds.clear(); //so it will be rebuilt on the next call to GetVmId
+}
+
+int Env::GetRound()
+{
+    return r;
 }
 
 void Env::SetNumTasks(int num) 
@@ -148,16 +197,28 @@ string Env::GetVmTrace(int vmid)
 
 int Env::GetVmId(size_t idx)
 {
-    if (mMyVmIds.size() == 0) {
-        for (int i = 0; i < mNumVms; i++) {
-            if (i % mNumTasks == mRank) {
-                mMyVmIds.push_back(i);
-            }
-        }
+    //if (mMyVmIds.size() == 0) {
+    //    for (int i = 0; i < mNumVms; i++) {
+    //        if (i % mNumTasks == mRank) {
+    //            mMyVmIds.push_back(i);
+    //        }
+    //    }
+    //}
+    //
+    //if (idx < mMyVmIds.size()) {
+    //    return mMyVmIds[idx];
+    //}
+    //else {
+    //    return -1;
+    //}
+
+    if (mMyVmSchedule.size() == 0) {
+        NullScheduler scheduler;
+        Env::ScheduleVMs(scheduler);
     }
 
-    if (idx < mMyVmIds.size()) {
-        return mMyVmIds[idx];
+    if (mRound < mMyVmSchedule.size() && idx < mMyVmSchedule[mRound].size()) {
+        return mMyVmSchedule[mRound][idx];
     }
     else {
         return -1;

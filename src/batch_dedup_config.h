@@ -22,11 +22,16 @@ extern const uint16_t BLOCK_DIRTY_FLAG;
 class Env
 {
 public:
+    static void ScheduleVMs(RoundScheduler scheduler); //requires rank, numvms, and that snapshots have been mixed
+
     static void SetRank(int rank);
     static int  GetRank();
 
     static void SetNumTasks(int num);
     static int  GetNumTasks();
+
+    static void InitRound(int r);
+    static int GetRound();
 
     static void SetNumPartitions(int num);
     static int  GetNumPartitions();
@@ -115,6 +120,7 @@ public:
 
 private:
     static int            mRank;
+    static int            mRound;
     static int            mNumTasks;
     static int            mNumPartitions;
     static int            mNumVms;
@@ -125,7 +131,8 @@ private:
     static size_t         mReadBufSize;
     static size_t         mWriteBufSize;
     static vector<string> mSampleTraces; // a list of sample trace files
-    static vector<int>    mMyVmIds; // a list of VM IDs that belong to this MPI instance
+    //static vector<int>    mMyVmIds; // a list of VM IDs that belong to this MPI instance
+    static vector<vector<int> > mMyVmSchedule; //list of VM IDs for this instance to backup in each round
     static string         mLocalPath; // path to local storage
     static string         mRemotePath; // path to remote storage (lustre)
     static string         mHomePath; // path to home directory

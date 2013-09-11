@@ -245,14 +245,17 @@ int main(int argc, char** argv)
     }
     TimerPool::Stop("LoadIndex");
 
-    MPI_Barrier(MPI_COMM_WORLD);	// sync the progress before taking measurement
+    MPI_Barrier(MPI_COMM_WORLD);	// sync the progress before taking measurements
+
+    TimerPool::Start("Deduplication");
+
 
     struct pstat begin, end;
     pid_t mypid = getpid();
     get_usage(mypid, &begin);
 
     LOG_INFO("exchanging dirty blocks");
-    TimerPool::Start("ExchangeDirtyBlocks");
+    TimerPool::Start("1aExchangeDirtyBlocks");
     // mpi-1: exchange dirty segments
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -271,7 +274,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while(0);
-    TimerPool::Stop("ExchangeDirtyBlocks");
+    TimerPool::Stop("1aExchangeDirtyBlocks");
 
     LOG_INFO("making dedup comparison");
     uint64_t indexEntries = 0;
@@ -280,7 +283,7 @@ int main(int argc, char** argv)
     uint64_t s2dup_output_count = 0;
     uint64_t s2dupnew_output_count = 0;
     uint64_t s2new_output_count = 0;
-    TimerPool::Start("DedupComparison");
+    TimerPool::Start("1bDedupComparison");
     // local-2: compare with partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
@@ -324,7 +327,7 @@ int main(int argc, char** argv)
         //LOG_INFO("Step 2 Partition " << partid << " Summary\tnew: " << partitionNew << "\tdupnew: " << partitionDupNew << "\tdup: " << partitionDups);
     }    
 
-    TimerPool::Stop("DedupComparison");
+    TimerPool::Stop("1bDedupComparison");
     LOG_INFO("Step 2 Summary: blocks read: " << s2dedup_input_count);
     LOG_INFO("Step 2 Summary: dup blocks written: " << s2dup_output_count);
     LOG_INFO("Step 2 Summary: dup-with-new blocks written: " << s2dupnew_output_count);
@@ -334,7 +337,7 @@ int main(int argc, char** argv)
     Env::StatPartitionIndexSize();
 
     LOG_INFO("exchange new blocks");
-    TimerPool::Start("ExchangeNewBlocks");
+    TimerPool::Start("2aExchangeNewBlocks");
     // mpi-2: exchange new blocks
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -353,11 +356,11 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeNewBlocks");    
+    TimerPool::Stop("2aExchangeNewBlocks");    
 
     LOG_INFO("writing new blocks to backup storage");
     uint64_t s3block_count = 0;
-    TimerPool::Start("WriteNewBlocks");
+    TimerPool::Start("2bWriteNewBlocks");
     // local-3: write new blocks to storage
     for (i = 0; Env::GetVmId(i) >= 0; i++) {
         int vmid = Env::GetVmId(i);
@@ -372,11 +375,11 @@ int main(int argc, char** argv)
             output.Put(bm);
         }
     }
-    TimerPool::Stop("WriteNewBlocks");
+    TimerPool::Stop("2bWriteNewBlocks");
     LOG_INFO("Step 3 Summary: blocks read and written: " << s3block_count);
 
     LOG_INFO("exchanging data reference of new blocks");
-    TimerPool::Start("ExchangeNewRefs");
+    TimerPool::Start("3aExchangeNewRefs");
     // mpi-3: exchange new block ref
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -395,11 +398,11 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeNewRefs");
+    TimerPool::Stop("3aExchangeNewRefs");
 
     LOG_INFO("updating partition index and dup_new block references");
     uint64_t dupNewBlocks = 0;
-    TimerPool::Start("UpdateRefAndIndex");
+    TimerPool::Start("3bUpdateRefAndIndex");
     // local-4: update refs to pending blocks, then update partition index
     for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
         PartitionIndex index;
@@ -423,11 +426,11 @@ int main(int argc, char** argv)
         //input.Stat();
         //output.Stat();
     }
-    TimerPool::Stop("UpdateRefAndIndex");
+    TimerPool::Stop("3bUpdateRefAndIndex");
     LOG_INFO("Reference Update Summary: dup-with-new blocks: " << dupNewBlocks);
 
     LOG_INFO("exchanging dup blocks");
-    TimerPool::Start("ExchangeDupBlocks");
+    TimerPool::Start("4ExchangeDupBlocks");
     // mpi-4: exchange dup block meta
     do {
         MpiEngine* p_mpi = new MpiEngine();
@@ -446,7 +449,7 @@ int main(int argc, char** argv)
         delete p_reader;
         delete p_accu;
     } while (0);
-    TimerPool::Stop("ExchangeDupBlocks");
+    TimerPool::Stop("4ExchangeDupBlocks");
 
     get_usage(mypid, &end);
     double user_usage, system_usage;
