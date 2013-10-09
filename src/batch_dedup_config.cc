@@ -28,14 +28,38 @@ size_t         Env::mReadBufSize = 0;
 size_t         Env::mWriteBufSize = 0;
 vector<string> Env::mSampleTraces; // a list of sample trace files
 //vector<int>    Env::mMyVmIds; // a list of VM IDs that belong to this MPI instance for this backup round
-vector<vector<int> > mMyVmSchedule; //list of VM IDs for this instance to backup in each round
+vector<vector<int> > Env::mMyVmSchedule; //list of VM IDs for this instance to backup in each round
 string         Env::mLocalPath; // path to local storage
 string         Env::mRemotePath; // path to remote storage (lustre)
 string         Env::mHomePath; // path to home directory
 ofstream       Env::mLogger;
 size_t         Env::mIndexSize = 0;
 
-void Env::ScheduleVMs(RoundScheduler scheduler)
+int Env::VmidToMid(int vmid) {
+    if (vmid > GetNumVms()) {
+        return -1;
+    } else {
+        return vmid % mNumTasks;
+    }
+}
+
+int Env::LvmidToVmid(int vmid) {
+    if (vmid > (mNumVms / mNumTasks)) {
+        return -1;
+    } else {
+        return mRank + (mNumTasks * vmid);
+    }
+}
+
+int Env::VmidToSid(int vmid) {
+    if (vmid > GetNumVms()) {
+        return -1;
+    } else {
+        return vmid % mSampleTraces.size();
+    }
+}
+
+void Env::ScheduleVMs(RoundScheduler* scheduler)
 {
     size_t num_samples = mSampleTraces.size();
     vector<double> samplesizes;
@@ -50,23 +74,31 @@ void Env::ScheduleVMs(RoundScheduler scheduler)
     vector<vector<double> > loads;
     int vmid = 0;
     for (int i = 0; i < mNumVms; i++) {
-        if (i % mNumTasks == mRank) {
-            if (loads.size < i % mNumTasks) {
-                vector<double> empty_machine;
-                loads.push_back(empty_machine);
-            }
-            loads[i % mNumTasks].push_back(samplesizes[i % num_samples]);
+        while (loads.size() <= VmidToMid(i)) {
+            vector<double> empty_machine;
+            loads.push_back(empty_machine);
         }
+        //cerr << ">> loads[" << (VmidToMid(i)) << "].add " << samplesizes[VmidToSid(i)] << endl;
+        loads[VmidToMid(i)].push_back(samplesizes[VmidToSid(i)]);
     }
     //first construct vm/machine loads (we need to estimate machine size for this)
     //then run scheduler until finished,
     //adding this machine's schedule for each round
-    scheduler.setMachineList(loads);
-    scheduler.setTimeLimit(60*60*3);
-    vector<vector<int> > round schedule;
-    while (scheduler.schedule_round(round_schedule)) {
+    scheduler->setMachineList(loads);
+    scheduler->setTimeLimit(60*60*3);
+    vector<vector<int> > round_schedule;
+    while (scheduler->schedule_round(round_schedule)) {
+        //cout << "adding round:";
+        //for(int i = 0; i < round_schedule[mRank].size(); i++) {
+        //    cout << " " << round_schedule[mRank][i];
+        //}
+        //cout << endl;
+        for(int i = 0; i < round_schedule[mRank].size(); i++) {
+            round_schedule[mRank][i] = LvmidToVmid(round_schedule[mRank][i]);
+        }
         mMyVmSchedule.push_back(round_schedule[mRank]);
     }
+
 }
 
 void Env::SetRank(int rank) 
@@ -79,15 +111,20 @@ int Env::GetRank()
     return mRank; 
 }
 
-void Env::InitRound(int r)
+bool Env::InitRound(int r)
 {
     mRound = r;
-    mMyVmIds.clear(); //so it will be rebuilt on the next call to GetVmId
+    if (mMyVmSchedule.size() == 0) {
+        NullScheduler scheduler;
+        Env::ScheduleVMs(&scheduler);
+    }
+    return mMyVmSchedule.size() > r;
+    //mMyVmIds.clear(); //so it will be rebuilt on the next call to GetVmId
 }
 
 int Env::GetRound()
 {
-    return r;
+    return mRound;
 }
 
 void Env::SetNumTasks(int num) 
@@ -214,13 +251,15 @@ int Env::GetVmId(size_t idx)
 
     if (mMyVmSchedule.size() == 0) {
         NullScheduler scheduler;
-        Env::ScheduleVMs(scheduler);
+        Env::ScheduleVMs(&scheduler);
     }
 
     if (mRound < mMyVmSchedule.size() && idx < mMyVmSchedule[mRound].size()) {
+        cout << "Machine " << mRank << " round[" << mRound << "," << idx << "] = " << mMyVmSchedule[mRound][idx] << endl;
         return mMyVmSchedule[mRound][idx];
     }
     else {
+        //cout << "Machine " << mRank << " round " << mRound << " has no vm " << idx << endl;
         return -1;
     }
 }
@@ -470,6 +509,10 @@ int Env::GetSourceNodeId(int vmid)
 
 string Env::ToString()
 {
+    int numVms = 0;
+    for(int i = 0; i < mMyVmSchedule.size(); i++) {
+        numVms += mMyVmSchedule[i].size();
+    }
     stringstream ss;
     GetVmId(0);
     ss << "rank " << mRank
@@ -482,7 +525,7 @@ string Env::ToString()
        << ", local path " << mLocalPath
        << ", remote path " << mRemotePath
        << ", home path " << mHomePath
-       << ", Vms on this node " << mMyVmIds.size()
+       << ", Vms on this node " << numVms //mMyVmIds.size()
        << ", partitions per node " << GetNumPartitionsPerNode()
        << ", begin of partition " << GetPartitionBegin()
        << ", end of partition " << GetPartitionEnd()

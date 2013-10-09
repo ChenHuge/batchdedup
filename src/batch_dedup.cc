@@ -221,8 +221,8 @@ int main(int argc, char** argv)
     TimerPool::Start("PrepareTrace");
     // local-1: prepare traces, partition indices
     int i = 0;
-    while (Env::GetVmId(i) >= 0) {
-        int vmid = Env::GetVmId(i);
+    while (Env::LvmidToVmid(i) >= 0) { //we use this mapping function because it returns all vms for this machine, not just those for the current round, and we want to prepare all traces at the start
+        int vmid = Env::LvmidToVmid(i);
         int ssid = Env::GetNumSnapshots();
         string source_trace = Env::GetSampleTrace(vmid);
         string mixed_trace = Env::GetVmTrace(vmid);
@@ -249,231 +249,236 @@ int main(int argc, char** argv)
 
     TimerPool::Start("Deduplication");
 
+    int round = 0;
+    while (Env::InitRound(round)) {
+        round++;
+        LOG_INFO("Starting Round" << round);
 
-    struct pstat begin, end;
-    pid_t mypid = getpid();
-    get_usage(mypid, &begin);
+        struct pstat begin, end;
+        pid_t mypid = getpid();
+        get_usage(mypid, &begin);
 
-    LOG_INFO("exchanging dirty blocks");
-    TimerPool::Start("1aExchangeDirtyBlocks");
-    // mpi-1: exchange dirty segments
-    do {
-        MpiEngine* p_mpi = new MpiEngine();
-        TraceReader* p_reader = new TraceReader();
-        RawRecordAccumulator* p_accu = new RawRecordAccumulator();
+        LOG_INFO("exchanging dirty blocks");
+        TimerPool::Start("1aExchangeDirtyBlocks");
+        // mpi-1: exchange dirty segments
+        do {
+            MpiEngine* p_mpi = new MpiEngine();
+            TraceReader* p_reader = new TraceReader();
+            RawRecordAccumulator* p_accu = new RawRecordAccumulator();
 
-        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
-        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
-        p_mpi->SetTimerPrefix("ExchangeDirtyBlocks");
-        p_mpi->Start();
-        LOG_INFO("ExchangeDirtyBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
-        p_reader->Stat();
-        p_accu->Stat();
+            p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+            p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+            p_mpi->SetTimerPrefix("ExchangeDirtyBlocks");
+            p_mpi->Start();
+            LOG_INFO("ExchangeDirtyBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+            p_reader->Stat();
+            p_accu->Stat();
 
-        delete p_mpi;
-        delete p_reader;
-        delete p_accu;
-    } while(0);
-    TimerPool::Stop("1aExchangeDirtyBlocks");
+            delete p_mpi;
+            delete p_reader;
+            delete p_accu;
+        } while(0);
+        TimerPool::Stop("1aExchangeDirtyBlocks");
 
-    LOG_INFO("making dedup comparison");
-    uint64_t indexEntries = 0;
-    
-    uint64_t s2dedup_input_count = 0;
-    uint64_t s2dup_output_count = 0;
-    uint64_t s2dupnew_output_count = 0;
-    uint64_t s2new_output_count = 0;
-    TimerPool::Start("1bDedupComparison");
-    // local-2: compare with partition index
-    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
-        PartitionIndex index;
-        index.FromFile(Env::GetLocalIndexName(partid));
-        indexEntries += (uint64_t)index.getNumEntries();
-        RecordReader<Block> reader(Env::GetStep2InputName(partid));
-        Block blk;
-        BlockMeta bm;
-        DedupBuffer buf;
-        RecordWriter<BlockMeta> output1(Env::GetStep2OutputDupBlocksName(partid));
-        RecordWriter<Block> output2(Env::GetStep2OutputDupWithNewName(partid));
-        RecordWriter<Block> output3(Env::GetStep2OutputNewBlocksName(partid));
-        //int partitionDups = 0;
-        //int partitionDupNew = 0;
-        //int partitionNew = 0;
+        LOG_INFO("making dedup comparison");
+        uint64_t indexEntries = 0;
+        
+        uint64_t s2dedup_input_count = 0;
+        uint64_t s2dup_output_count = 0;
+        uint64_t s2dupnew_output_count = 0;
+        uint64_t s2new_output_count = 0;
+        TimerPool::Start("1bDedupComparison");
+        // local-2: compare with partition index
+        for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
+            PartitionIndex index;
+            index.FromFile(Env::GetLocalIndexName(partid));
+            indexEntries += (uint64_t)index.getNumEntries();
+            RecordReader<Block> reader(Env::GetStep2InputName(partid));
+            Block blk;
+            BlockMeta bm;
+            DedupBuffer buf;
+            RecordWriter<BlockMeta> output1(Env::GetStep2OutputDupBlocksName(partid));
+            RecordWriter<Block> output2(Env::GetStep2OutputDupWithNewName(partid));
+            RecordWriter<Block> output3(Env::GetStep2OutputNewBlocksName(partid));
+            //int partitionDups = 0;
+            //int partitionDupNew = 0;
+            //int partitionNew = 0;
 
-        while(reader.Get(blk)) {
-            s2dedup_input_count++;
-            // dup with existing blocks?
-            if (index.Find(blk.mCksum)) {
-                s2dup_output_count++;
-                //partitionDups++;
-                bm.mBlk = blk;
-                bm.mRef = REF_VALID;
-                output1.Put(bm);
-                continue;
+            while(reader.Get(blk)) {
+                s2dedup_input_count++;
+                // dup with existing blocks?
+                if (index.Find(blk.mCksum)) {
+                    s2dup_output_count++;
+                    //partitionDups++;
+                    bm.mBlk = blk;
+                    bm.mRef = REF_VALID;
+                    output1.Put(bm);
+                    continue;
+                }
+                // dup with new blocks in this run?
+                if (buf.Find(blk)) {
+                    s2dupnew_output_count++;
+                    //partitionDupNew++;
+                    output2.Put(blk);
+                    continue;
+                }
+                // completely new
+                //partitionNew++;
+                s2new_output_count++;
+                buf.Add(blk);
+                output3.Put(blk);
             }
-            // dup with new blocks in this run?
-            if (buf.Find(blk)) {
-                s2dupnew_output_count++;
-                //partitionDupNew++;
-                output2.Put(blk);
-                continue;
-            }
-            // completely new
-            //partitionNew++;
-            s2new_output_count++;
-            buf.Add(blk);
-            output3.Put(blk);
-        }
-        //LOG_INFO("Step 2 Partition " << partid << " Summary\tnew: " << partitionNew << "\tdupnew: " << partitionDupNew << "\tdup: " << partitionDups);
-    }    
+            //LOG_INFO("Step 2 Partition " << partid << " Summary\tnew: " << partitionNew << "\tdupnew: " << partitionDupNew << "\tdup: " << partitionDups);
+        }    
 
-    TimerPool::Stop("1bDedupComparison");
-    LOG_INFO("Step 2 Summary: blocks read: " << s2dedup_input_count);
-    LOG_INFO("Step 2 Summary: dup blocks written: " << s2dup_output_count);
-    LOG_INFO("Step 2 Summary: dup-with-new blocks written: " << s2dupnew_output_count);
-    LOG_INFO("Step 2 Summary: new blocks written: " << s2new_output_count);
-    LOG_INFO("Step 2 Summary: total blocks written: " << (s2new_output_count + s2dupnew_output_count + s2dup_output_count));
-    LOG_INFO("Total entries in current partitions: " << indexEntries);
-    Env::StatPartitionIndexSize();
+        TimerPool::Stop("1bDedupComparison");
+        LOG_INFO("Step 2 Summary: blocks read: " << s2dedup_input_count);
+        LOG_INFO("Step 2 Summary: dup blocks written: " << s2dup_output_count);
+        LOG_INFO("Step 2 Summary: dup-with-new blocks written: " << s2dupnew_output_count);
+        LOG_INFO("Step 2 Summary: new blocks written: " << s2new_output_count);
+        LOG_INFO("Step 2 Summary: total blocks written: " << (s2new_output_count + s2dupnew_output_count + s2dup_output_count));
+        LOG_INFO("Total entries in current partitions: " << indexEntries);
+        Env::StatPartitionIndexSize();
 
-    LOG_INFO("exchange new blocks");
-    TimerPool::Start("2aExchangeNewBlocks");
-    // mpi-2: exchange new blocks
-    do {
-        MpiEngine* p_mpi = new MpiEngine();
-        NewBlockReader* p_reader = new NewBlockReader();
-        NewRecordAccumulator* p_accu = new NewRecordAccumulator();
+        LOG_INFO("exchange new blocks");
+        TimerPool::Start("2aExchangeNewBlocks");
+        // mpi-2: exchange new blocks
+        do {
+            MpiEngine* p_mpi = new MpiEngine();
+            NewBlockReader* p_reader = new NewBlockReader();
+            NewRecordAccumulator* p_accu = new NewRecordAccumulator();
 
-        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
-        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
-        p_mpi->SetTimerPrefix("ExchangeNewBlocks");
-        p_mpi->Start();
-        LOG_INFO("ExchangeNewBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
-        p_reader->Stat();
-        p_accu->Stat();
+            p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+            p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+            p_mpi->SetTimerPrefix("ExchangeNewBlocks");
+            p_mpi->Start();
+            LOG_INFO("ExchangeNewBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+            p_reader->Stat();
+            p_accu->Stat();
 
-        delete p_mpi;
-        delete p_reader;
-        delete p_accu;
-    } while (0);
-    TimerPool::Stop("2aExchangeNewBlocks");    
+            delete p_mpi;
+            delete p_reader;
+            delete p_accu;
+        } while (0);
+        TimerPool::Stop("2aExchangeNewBlocks");    
 
-    LOG_INFO("writing new blocks to backup storage");
-    uint64_t s3block_count = 0;
-    TimerPool::Start("2bWriteNewBlocks");
-    // local-3: write new blocks to storage
-    for (i = 0; Env::GetVmId(i) >= 0; i++) {
-        int vmid = Env::GetVmId(i);
-        RecordReader<Block> input(Env::GetStep3InputName(vmid));
-        RecordWriter<BlockMeta> output(Env::GetStep3OutputName(vmid));
-        Block blk;
-        BlockMeta bm;
-        while (input.Get(blk)) {
-            s3block_count++;
-            bm.mBlk = blk;
-            bm.mRef = REF_VALID;
-            output.Put(bm);
-        }
-    }
-    TimerPool::Stop("2bWriteNewBlocks");
-    LOG_INFO("Step 3 Summary: blocks read and written: " << s3block_count);
-
-    LOG_INFO("exchanging data reference of new blocks");
-    TimerPool::Start("3aExchangeNewRefs");
-    // mpi-3: exchange new block ref
-    do {
-        MpiEngine* p_mpi = new MpiEngine();
-        NewRefReader* p_reader = new NewRefReader();
-        NewRefAccumulator* p_accu = new NewRefAccumulator();
-
-        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
-        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
-        p_mpi->SetTimerPrefix("ExchangeNewRefs");
-        p_mpi->Start();
-        LOG_INFO("ExchangeNewRefs Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
-        p_reader->Stat();
-        p_accu->Stat();
-
-        delete p_mpi;
-        delete p_reader;
-        delete p_accu;
-    } while (0);
-    TimerPool::Stop("3aExchangeNewRefs");
-
-    LOG_INFO("updating partition index and dup_new block references");
-    uint64_t dupNewBlocks = 0;
-    TimerPool::Start("3bUpdateRefAndIndex");
-    // local-4: update refs to pending blocks, then update partition index
-    for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
-        PartitionIndex index;
-        index.FromFile(Env::GetStep4InputName(partid));
-        RecordReader<Block> input(Env::GetStep2OutputDupWithNewName(partid));
-        RecordWriter<BlockMeta> output(Env::GetStep2OutputDupBlocksName(partid), true);
-        Block blk;
-        BlockMeta bm;
-        while (input.Get(blk)) {
-            dupNewBlocks++;
-            if (index.Find(blk.mCksum)) {
+        LOG_INFO("writing new blocks to backup storage");
+        uint64_t s3block_count = 0;
+        TimerPool::Start("2bWriteNewBlocks");
+        // local-3: write new blocks to storage
+        for (i = 0; Env::GetVmId(i) >= 0; i++) {
+            int vmid = Env::GetVmId(i);
+            RecordReader<Block> input(Env::GetStep3InputName(vmid));
+            RecordWriter<BlockMeta> output(Env::GetStep3OutputName(vmid));
+            Block blk;
+            BlockMeta bm;
+            while (input.Get(blk)) {
+                s3block_count++;
                 bm.mBlk = blk;
                 bm.mRef = REF_VALID;
                 output.Put(bm);
             }
-            else {
-                LOG_ERROR("cannot find the ref for a pending block");
-            }
         }
-        index.AppendToFile(Env::GetLocalIndexName(partid));
-        //input.Stat();
-        //output.Stat();
+        TimerPool::Stop("2bWriteNewBlocks");
+        LOG_INFO("Step 3 Summary: blocks read and written: " << s3block_count);
+
+        LOG_INFO("exchanging data reference of new blocks");
+        TimerPool::Start("3aExchangeNewRefs");
+        // mpi-3: exchange new block ref
+        do {
+            MpiEngine* p_mpi = new MpiEngine();
+            NewRefReader* p_reader = new NewRefReader();
+            NewRefAccumulator* p_accu = new NewRefAccumulator();
+
+            p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+            p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+            p_mpi->SetTimerPrefix("ExchangeNewRefs");
+            p_mpi->Start();
+            LOG_INFO("ExchangeNewRefs Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+            p_reader->Stat();
+            p_accu->Stat();
+
+            delete p_mpi;
+            delete p_reader;
+            delete p_accu;
+        } while (0);
+        TimerPool::Stop("3aExchangeNewRefs");
+
+        LOG_INFO("updating partition index and dup_new block references");
+        uint64_t dupNewBlocks = 0;
+        TimerPool::Start("3bUpdateRefAndIndex");
+        // local-4: update refs to pending blocks, then update partition index
+        for (int partid = Env::GetPartitionBegin(); partid < Env::GetPartitionEnd(); partid++) {
+            PartitionIndex index;
+            index.FromFile(Env::GetStep4InputName(partid));
+            RecordReader<Block> input(Env::GetStep2OutputDupWithNewName(partid));
+            RecordWriter<BlockMeta> output(Env::GetStep2OutputDupBlocksName(partid), true);
+            Block blk;
+            BlockMeta bm;
+            while (input.Get(blk)) {
+                dupNewBlocks++;
+                if (index.Find(blk.mCksum)) {
+                    bm.mBlk = blk;
+                    bm.mRef = REF_VALID;
+                    output.Put(bm);
+                }
+                else {
+                    LOG_ERROR("cannot find the ref for a pending block");
+                }
+            }
+            index.AppendToFile(Env::GetLocalIndexName(partid));
+            //input.Stat();
+            //output.Stat();
+        }
+        TimerPool::Stop("3bUpdateRefAndIndex");
+        LOG_INFO("Reference Update Summary: dup-with-new blocks: " << dupNewBlocks);
+
+        LOG_INFO("exchanging dup blocks");
+        TimerPool::Start("4ExchangeDupBlocks");
+        // mpi-4: exchange dup block meta
+        do {
+            MpiEngine* p_mpi = new MpiEngine();
+            DupBlockReader* p_reader = new DupBlockReader();
+            DupRecordAccumulator* p_accu = new DupRecordAccumulator();
+
+            p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
+            p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
+            p_mpi->SetTimerPrefix("ExchangeDupBlocks");
+            p_mpi->Start();
+            LOG_INFO("ExchangeDupBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
+            p_reader->Stat();
+            p_accu->Stat();
+
+            delete p_mpi;
+            delete p_reader;
+            delete p_accu;
+        } while (0);
+        TimerPool::Stop("4ExchangeDupBlocks");
+
+        get_usage(mypid, &end);
+        double user_usage, system_usage;
+        calc_cpu_usage_pct(&end, &begin, &user_usage, &system_usage);
+        LOG_INFO("cpu usage %: user " << user_usage << ", system " << system_usage);
+
+        sleep(1 * Env::GetRank());
+        LOG_INFO("uploading partition index to lustre");
+        TimerPool::Start("UploadIndex");
+        for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
+            string remote_fname = Env::GetRemoteIndexName(i);
+            string local_fname = Env::GetLocalIndexName(i);
+            stringstream cmd;
+            cmd << "cp " << local_fname << " " << remote_fname;
+            system(cmd.str().c_str());
+        }
+        TimerPool::Stop("UploadIndex");
+
+        TimerPool::Stop("Total");
+        TimerPool::PrintAll();
+
+        // clean up
+        delete[] send_buf;
+        delete[] recv_buf;
     }
-    TimerPool::Stop("3bUpdateRefAndIndex");
-    LOG_INFO("Reference Update Summary: dup-with-new blocks: " << dupNewBlocks);
-
-    LOG_INFO("exchanging dup blocks");
-    TimerPool::Start("4ExchangeDupBlocks");
-    // mpi-4: exchange dup block meta
-    do {
-        MpiEngine* p_mpi = new MpiEngine();
-        DupBlockReader* p_reader = new DupBlockReader();
-        DupRecordAccumulator* p_accu = new DupRecordAccumulator();
-
-        p_mpi->SetDataSpout(dynamic_cast<DataSpout*>(p_reader));
-        p_mpi->SetDataSink(dynamic_cast<DataSink*>(p_accu));
-        p_mpi->SetTimerPrefix("ExchangeDupBlocks");
-        p_mpi->Start();
-        LOG_INFO("ExchangeDupBlocks Rounds of MPI Communication: " << p_mpi->GetMpiCount()); 
-        p_reader->Stat();
-        p_accu->Stat();
-
-        delete p_mpi;
-        delete p_reader;
-        delete p_accu;
-    } while (0);
-    TimerPool::Stop("4ExchangeDupBlocks");
-
-    get_usage(mypid, &end);
-    double user_usage, system_usage;
-    calc_cpu_usage_pct(&end, &begin, &user_usage, &system_usage);
-    LOG_INFO("cpu usage %: user " << user_usage << ", system " << system_usage);
-
-    sleep(1 * Env::GetRank());
-    LOG_INFO("uploading partition index to lustre");
-    TimerPool::Start("UploadIndex");
-    for (i = Env::GetPartitionBegin(); i < Env::GetPartitionEnd(); i++) {
-        string remote_fname = Env::GetRemoteIndexName(i);
-        string local_fname = Env::GetLocalIndexName(i);
-        stringstream cmd;
-        cmd << "cp " << local_fname << " " << remote_fname;
-        system(cmd.str().c_str());
-    }
-    TimerPool::Stop("UploadIndex");
-
-    TimerPool::Stop("Total");
-    TimerPool::PrintAll();
-
-    // clean up
-    delete[] send_buf;
-    delete[] recv_buf;
     final();
     MPI_Finalize();
     return 0;

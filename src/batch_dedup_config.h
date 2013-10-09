@@ -6,6 +6,7 @@
 #include <string>
 #include <fstream>
 #include "trace_types.h"
+#include "RoundScheduler.h"
 
 using namespace std;
 
@@ -22,7 +23,10 @@ extern const uint16_t BLOCK_DIRTY_FLAG;
 class Env
 {
 public:
-    static void ScheduleVMs(RoundScheduler scheduler); //requires rank, numvms, and that snapshots have been mixed
+    static void ScheduleVMs(RoundScheduler *scheduler); //requires rank, numvms, and that snapshots have been mixed
+    static int VmidToMid(int vmid); //handles vm->machine mapping
+    static int LvmidToVmid(int vmid); //handles local vmid->global vmid mapping
+    static int VmidToSid(int vmid); //handles vm->sample vm mapping
 
     static void SetRank(int rank);
     static int  GetRank();
@@ -30,7 +34,7 @@ public:
     static void SetNumTasks(int num);
     static int  GetNumTasks();
 
-    static void InitRound(int r);
+    static bool InitRound(int r);
     static int GetRound();
 
     static void SetNumPartitions(int num);

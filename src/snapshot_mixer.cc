@@ -33,11 +33,11 @@ bool SnapshotMixer::Generate()
     double seg_threshold = 0.0;
     double blk_threshold = 0.0;
 
-    srand(seed);
     Segment seg;
 
     while (seg.LoadFixSize(is)) {
         seed = mVmId * segId;
+        srand(seed);
         segId++;
         for (int i = 0; i <= mSsId; i++) {
             if (i == 0) {
@@ -88,22 +88,3 @@ bool SnapshotMixer::Generate()
     LOG_DEBUG(mOutputFile << " is generated from " << mInputFile);
     return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -12,7 +12,7 @@ extern double model_round_cow(const vector<vector<double> > &machine_loads);
 extern double measure_load(const vector<vector<double> > &machine_loads, double &max_size, int &max_mid);
 extern double model_time(double max_size, double total_size, int p, bool verbose);*/
 
-class BackupScheduler {
+class RoundScheduler {
     public:
         void setMachineList(std::vector<std::vector<double> > machine_loads);
         void setTimeLimit(double seconds);
@@ -23,10 +23,20 @@ class BackupScheduler {
         double time_limit;
 };
 
-class NullScheduler : public BackupScheduler{
+class NullScheduler : public RoundScheduler{
     public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
+};
+
+class DBPScheduler2 : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<int> > &round_schedule);
+        const char * getName();
+    private:
+        vector<vector<vector<int> > > round_schedules;
+        double pack_vms(vector<vector<int> > machines,int rounds);
+        void schedule_vms(vector<vector<double> > &machines);
 };
 
 /*class OneEachScheduler : public BackupScheduler{
@@ -50,16 +60,6 @@ class CowScheduler : public BackupScheduler{
 };
 
 class DBPScheduler : public BackupScheduler{
-    public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
-        const char * getName();
-    private:
-        vector<vector<vector<double> > > round_schedules;
-        double pack_vms(vector<vector<double> > machines,int rounds);
-        void schedule_vms(vector<vector<double> > &machines);
-};
-
-class DBPScheduler2 : public BackupScheduler{
     public:
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();
