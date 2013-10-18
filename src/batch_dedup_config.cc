@@ -61,6 +61,7 @@ int Env::VmidToSid(int vmid) {
 
 void Env::ScheduleVMs(RoundScheduler* scheduler)
 {
+    cout << "Using Scheduler: " << scheduler->getName() << endl;
     size_t num_samples = mSampleTraces.size();
     vector<double> samplesizes;
     
@@ -69,7 +70,9 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
         struct stat filestatus;
         stat( sample_path.c_str(), &filestatus );
         //36 bytes per chunk entry, avg chunk size 4.5KB
-        samplesizes.push_back((filestatus.st_size/36)*1024*4.5);
+        double size = (filestatus.st_size/36)*1024*4.5;
+        //we want sizes in GB
+        samplesizes.push_back( size / (1 << 30));
     }
     vector<vector<double> > loads;
     int vmid = 0;
@@ -115,7 +118,8 @@ bool Env::InitRound(int r)
 {
     mRound = r;
     if (mMyVmSchedule.size() == 0) {
-        NullScheduler scheduler;
+        //NullScheduler scheduler;
+        DBPScheduler2 scheduler;
         Env::ScheduleVMs(&scheduler);
     }
     return mMyVmSchedule.size() > r;
@@ -250,7 +254,8 @@ int Env::GetVmId(size_t idx)
     //}
 
     if (mMyVmSchedule.size() == 0) {
-        NullScheduler scheduler;
+        //NullScheduler scheduler;
+        DBPScheduler2 scheduler;
         Env::ScheduleVMs(&scheduler);
     }
 

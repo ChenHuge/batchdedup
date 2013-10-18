@@ -252,7 +252,7 @@ int main(int argc, char** argv)
     int round = 0;
     while (Env::InitRound(round)) {
         round++;
-        LOG_INFO("Starting Round" << round);
+        LOG_INFO("Starting Round " << round);
 
         struct pstat begin, end;
         pid_t mypid = getpid();
@@ -476,9 +476,9 @@ int main(int argc, char** argv)
         TimerPool::PrintAll();
 
         // clean up
-        delete[] send_buf;
-        delete[] recv_buf;
     }
+    delete[] send_buf;
+    delete[] recv_buf;
     final();
     MPI_Finalize();
     return 0;
