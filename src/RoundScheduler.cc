@@ -150,8 +150,26 @@ double measure_load(const vector<vector<double> > &machine_loads, double &max_si
     return total_size;
 }
 
+double measure_load(const vector<map<int, double> > &machine_loads, double &max_size, int &max_mid) {
+    max_size = 0;
+    max_mid = 0;
+    double total_size = 0;
+    for(int i = 0; i < machine_loads.size(); i++) {
+        double machine_size = 0;
+        for(map<int, double>::const_iterator vm = machine_loads[i].begin(); vm != machine_loads[i].end(); ++vm) {
+            machine_size += vm->second;
+        }
+        if (machine_size > max_size) {
+            max_size = machine_size;
+            max_mid = i;
+        }
+        total_size += machine_size;
+    }
+    return total_size;
+}
+
 //uses the time model to compute how long a given round schedule would take, and optionally prints stage times
-double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
+double model_time(const vector<map<int, double> > &machine_loads, bool verbose) {
     double max_size;
     int mid;
     double total_size = measure_load(machine_loads, max_size, mid);
@@ -160,7 +178,7 @@ double model_time(const vector<vector<double> > &machine_loads, bool verbose) {
 
 //uses the time model to compute how long a given round schedule would take, and optionally prints stage times
 //allows for modification of the load on one machine (adds load of size <vmsize> to machine <mid>
-double model_time2(const vector<vector<double> > &machine_loads, int mid, int vmsize, bool verbose) {
+double model_time2(const vector<map<int, double> > &machine_loads, int mid, double vmsize, bool verbose) {
     double max_size = 0;
     double total_size = 0;
     for(int i = 0; i < machine_loads.size(); i++) {
@@ -168,8 +186,8 @@ double model_time2(const vector<vector<double> > &machine_loads, int mid, int vm
         if (i == mid) {
             machine_size += vmsize;
         }
-        for(vector<double>::const_iterator vm = machine_loads[i].begin(); vm != machine_loads[i].end(); ++vm) {
-            machine_size += (*vm);
+        for(map<int, double>::const_iterator vm = machine_loads[i].begin(); vm != machine_loads[i].end(); ++vm) {
+            machine_size += vm->second;
         }
         if (machine_size > max_size) {
             max_size = machine_size;
@@ -182,7 +200,7 @@ double model_time2(const vector<vector<double> > &machine_loads, int mid, int vm
 
 
 
-void RoundScheduler::setMachineList(vector<vector<double> > machine_loads) {
+void RoundScheduler::setMachineList(vector<map<int, double> > machine_loads) {
     machines=machine_loads;
 }
 
@@ -197,7 +215,7 @@ bool NullScheduler::schedule_round(std::vector<std::vector<int> > &round_schedul
         return false;
     }
     bool schedule = false;
-    for(vector<vector<double> >::const_iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+    for(vector<map<int,double> >::const_iterator machine = machines.begin(); machine != machines.end(); ++machine) {
         if ((*machine).size() > 0) {
             schedule = true;
             break;
@@ -208,8 +226,11 @@ bool NullScheduler::schedule_round(std::vector<std::vector<int> > &round_schedul
     }
     for(int i = 0; i < machines.size(); i++) {
         vector<int> machine_schedule;
-        for(int j = 0; j < machines[i].size(); j++) {
-            machine_schedule.push_back(j);
+        //for(int j = 0; j < machines[i].size(); j++) {
+        //    machine_schedule.push_back(j);
+        //}
+        for(map<int,double>::iterator j = machines[i].begin(); j != machines[i].end(); ++j) {
+            machine_schedule.push_back(j->first);
         }
         round_schedule.push_back(machine_schedule);
     }
@@ -355,7 +376,7 @@ vector<double>::iterator pick_vm(vector<vector<double> > &machines, int &mid) {
 }
 */
 //measures round duration after removing the specified vm from the specified machine
-double model_rtime(const vector<vector<double> > &machines, int mid, int vm) {
+double model_rtime(const vector<map<int, double> > &machines, int mid, double vm) {
     return model_time2(machines,mid,-vm,false);
 }
 /*
@@ -365,18 +386,18 @@ double model_time_delta(const vector<vector<double> > &machines, int mid, int vm
 }
 */
 //measures the time of the round after adding the specified vm to the specified machine
-double model_new_time(const vector<vector<double> > &machines, int mid, int vm) {
+double model_new_time(const vector<map<int, double> > &machines, int mid, double vm) {
     return model_time2(machines,mid,vm,false);
 }
 
 //picks the vm whose removal will most decrease round time
 //tie-breaker:machine with greatest load
-vector<double>::iterator pick_max_tdelta_vm(vector<vector<double> > &machines, int &mid) {
+map<int, double>::iterator pick_max_tdelta_vm(vector<map<int, double> > &machines, int &mid) {
     double max_size;
     int max_mid;
     double total_size = measure_load(machines, max_size,max_mid);
     double schedule_time = model_time(total_size, max_size, machines.size(), false);
-    vector<double>::iterator best_vm = machines[0].end();
+    map<int, double>::iterator best_vm = machines[0].end();
     mid = -1;
     
     double best_time;
@@ -384,16 +405,16 @@ vector<double>::iterator pick_max_tdelta_vm(vector<vector<double> > &machines, i
 
     for(int i = 0; i < machines.size(); i++) {
         double machine_load = 0;
-        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
-            machine_load += *vm;
+        for(map<int, double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
+            machine_load += vm->second;
         }
-        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
+        for(map<int, double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
             double rtime;
             //if we are removing from the max machine, we must recompute max_size
             if (max_mid == i) {
-                rtime = model_rtime(machines, i, *vm);
+                rtime = model_rtime(machines, i, vm->second);
             } else {
-                rtime = model_time(total_size - *vm, max_size, machines.size() - 1, false);
+                rtime = model_time(total_size - vm->second, max_size, machines.size() - 1, false);
             }
             //if we haven't picked yet, or if the single round time is lower by picking this VM, or if machine round is greater and it's a tie
             if (best_vm == machines[0].end() || rtime < best_time || (rtime == best_time && machine_load > best_time_load)) {
@@ -424,7 +445,7 @@ vector<vector<vector<double> > >::iterator pick_min_ucow_round(vector<vector<vec
 }
 */
 //finds the round which will be the shortest in duration after adding the vm
-vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vector<int> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
+vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vector<int> > > &round_schedules, vector<map<int, double> > &machines, int mid, map<int,double>::const_iterator vm) {
     //double max_size;
     //int max_mid;
     //double total_size = measure_load(machines, max_size,max_mid);
@@ -434,19 +455,21 @@ vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vec
     double best_time;
     for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        vector<vector<double> > loads;
+        vector<map<int,double> > loads;
         for(int i = 0; i < (*round).size(); i++) {
-            vector<double> machine_load;
+            map<int,double> machine_load;
             for(int j = 0; j < (*round)[i].size(); j++) {
                 //stringstream ss;
                 //ss << " indexing with " << i << " and " << ((*round)[i][j]) << endl;
                 //cerr << ss.str();
-                machine_load.push_back(machines[i][((*round)[i][j])]);
+                //int vid = ((*round)[i][j]);
+                //machine_load[vid] = machines[i][vid];
+                machine_load[(*round)[i][j]] = machines[i][((*round)[i][j])];
             }
             loads.push_back(machine_load);
         }
 
-        double time = model_new_time(loads, mid, *vm);
+        double time = model_new_time(loads, mid, vm->second);
         if (best_round == round_schedules.end() || time < best_time) {
             best_round = round;
             best_time = time;
@@ -618,7 +641,7 @@ const char * DBPScheduler::getName() {
     return "Dual Bin Packing Scheduler 1 (ucow sort)";
 }
 */
-double DBPScheduler2::pack_vms(vector<vector<double> > machines,int rounds) {
+double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
     //cout << "About to start packing vms into " << rounds << " rounds" << endl;
     round_schedules.clear();
     vector<vector<int> > machine_schedule; //empty machine schedule
@@ -633,7 +656,7 @@ double DBPScheduler2::pack_vms(vector<vector<double> > machines,int rounds) {
     }
 
 
-    vector<double>::iterator vm;
+    map<int, double>::iterator vm;
     vector<vector<vector<int> > >::iterator round;
     int mid;
     stringstream ss;
@@ -648,7 +671,7 @@ double DBPScheduler2::pack_vms(vector<vector<double> > machines,int rounds) {
         cerr << ss.str();
         ss.str("");
         ss.clear();
-        (*round)[mid].push_back(vm - machines[mid].begin()); //we push the index of the vm, not the size
+        (*round)[mid].push_back(vm->first); //we push the index of the vm, not the size
         //cerr << "  pushed vm" << endl;
         machines[mid].erase(vm);
         //ss << "  erased vm" << endl;
@@ -661,13 +684,13 @@ double DBPScheduler2::pack_vms(vector<vector<double> > machines,int rounds) {
     double schedule_time = 0;
     for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        vector<vector<double> > loads;
+        vector<map<int, double> > loads;
         for(int i = 0; i < (*round).size(); i++) {
-            vector<double> machine_load;
+            map<int, double> machine_load;
             for(int j = 0; j < (*round)[i].size(); j++) {
                 //cout << "accessing: round[" << i << "][" << j << "]" << endl;
                 //cout << "accessing machines[" << i << "][" << (*round)[i][j] << "]" << endl;
-                machine_load.push_back(machines[i][((*round)[i][j])]);
+                machine_load[(*round)[i][j]] = machines[i][((*round)[i][j])];
             }
             loads.push_back(machine_load);
         }
@@ -677,17 +700,17 @@ double DBPScheduler2::pack_vms(vector<vector<double> > machines,int rounds) {
     return schedule_time;
 }
 
-void DBPScheduler2::schedule_vms(vector<vector<double> > &machines) {
+void DBPScheduler2::schedule_vms(vector<map<int,double> > &machines) {
     //cout << "About to start scheduling vms" << endl;
     int total_count = 0;
     int total_size = 0;
     double schedule_time;
-    for(vector<vector<double> >::iterator machine = machines.begin();
+    for(vector<map<int, double> >::iterator machine = machines.begin();
             machine != machines.end(); ++machine) {
-        for(vector<double>::iterator vm = (*machine).begin();
+        for(map<int, double>::iterator vm = (*machine).begin();
                 vm != (*machine).end(); ++vm) {
             total_count++;
-            total_size += *vm;
+            total_size += vm->second;
         }
     }
     //cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
@@ -707,7 +730,9 @@ void DBPScheduler2::schedule_vms(vector<vector<double> > &machines) {
         }
     }
     schedule_time = pack_vms(machines,UB);
-    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+    stringstream ss;
+    ss << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+    cout << ss.str();
 }
 
 bool DBPScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedule) {

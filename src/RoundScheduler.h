@@ -1,5 +1,6 @@
 #ifndef ROUNDSCHEDULER_H
 #include <vector>
+#include <map>
 
 using namespace std;
 
@@ -60,12 +61,12 @@ double model_time(double max_size, double total_size, int p, bool verbose);
 
 class RoundScheduler {
     public:
-        void setMachineList(std::vector<std::vector<double> > machine_loads);
+        void setMachineList(std::vector<std::map<int, double> > machine_loads);
         void setTimeLimit(double seconds);
         virtual bool schedule_round(std::vector<std::vector<int> > &round_schedule) = 0;
         virtual const char * getName() = 0;
     protected:
-        std::vector<std::vector<double> > machines;
+        std::vector<std::map<int,double> > machines;
         double time_limit;
 };
 
@@ -81,8 +82,8 @@ class DBPScheduler2 : public RoundScheduler{
         const char * getName();
     private:
         vector<vector<vector<int> > > round_schedules;
-        double pack_vms(vector<vector<double> > machines,int rounds);
-        void schedule_vms(vector<vector<double> > &machines);
+        double pack_vms(vector<map<int, double> > machines,int rounds);
+        void schedule_vms(vector<map<int, double> > &machines);
 };
 
 /*class OneEachScheduler : public BackupScheduler{

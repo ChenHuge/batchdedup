@@ -74,15 +74,17 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
         //we want sizes in GB
         samplesizes.push_back( size / (1 << 30));
     }
-    vector<vector<double> > loads;
+    vector<map<int,double> > loads;
     int vmid = 0;
     for (int i = 0; i < mNumVms; i++) {
         while (loads.size() <= VmidToMid(i)) {
-            vector<double> empty_machine;
+            map<int,double> empty_machine;
             loads.push_back(empty_machine);
         }
-        //cerr << ">> loads[" << (VmidToMid(i)) << "].add " << samplesizes[VmidToSid(i)] << endl;
-        loads[VmidToMid(i)].push_back(samplesizes[VmidToSid(i)]);
+        stringstream ss;
+        ss << ">> loads[" << (VmidToMid(i)) << "].add " << samplesizes[VmidToSid(i)] << endl;
+        cerr << ss.str();
+        loads[VmidToMid(i)][i] = samplesizes[VmidToSid(i)];
     }
     //first construct vm/machine loads (we need to estimate machine size for this)
     //then run scheduler until finished,
@@ -97,7 +99,12 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
         //}
         //cout << endl;
         for(int i = 0; i < round_schedule[mRank].size(); i++) {
-            round_schedule[mRank][i] = LvmidToVmid(round_schedule[mRank][i]);
+            //round_schedule[mRank][i] = LvmidToVmid(round_schedule[mRank][i]);
+            round_schedule[mRank][i] = round_schedule[mRank][i];
+            stringstream ss;
+            //ss << ">> schedule[" << mRank << "][" << i << "] = lvmtovm(" << round_schedule[mRank][i] << ") = " << LvmidToVmid(round_schedule[mRank][i]) << endl;
+            ss << ">> schedule[" << mRank << "][" << i << "] = " << round_schedule[mRank][i] << endl;
+            cerr << ss.str();
         }
         mMyVmSchedule.push_back(round_schedule[mRank]);
     }
