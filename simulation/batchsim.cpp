@@ -115,8 +115,10 @@ void usage(const char* progname) {
         "  --oneschedule - schedule one vm in each round" << endl <<
         "  --oneeachschedule - schedule one vm on each machine in each round" << endl <<
         "  --cowschedule - basic cow based scheduler" << 
-        "  --dbpschedule - more advanced scheduler based on Dual Bin Packing" << 
+        "  --dbpschedule - scheduler based on Dual Bin Packing (involves uCoW)" << 
+        "  --dbpschedule2 - improved scheduler based on Dual Bin Packing (uses time only)" << 
         "  --dbpn1schedule - Naive Dual Bin Packing scheduler" << 
+        "  --dbpn2schedule - Naive Dual Bin Packing scheduler 2" << 
         endl;
 }
 
