@@ -217,12 +217,15 @@ int main(int argc, char** argv)
     // avoid too many concurrent access to lustre
     sleep(1 * Env::GetRank());
 
+    stringstream ss;
+    ss << "Preparing traces:";
     LOG_INFO("preparing traces");
     TimerPool::Start("PrepareTrace");
     // local-1: prepare traces, partition indices
     int i = 0;
     while (Env::LvmidToVmid(i) >= 0) { //we use this mapping function because it returns all vms for this machine, not just those for the current round, and we want to prepare all traces at the start
         int vmid = Env::LvmidToVmid(i);
+        ss << " " << vmid;
         int ssid = Env::GetNumSnapshots();
         string source_trace = Env::GetSampleTrace(vmid);
         string mixed_trace = Env::GetVmTrace(vmid);
@@ -231,6 +234,7 @@ int main(int argc, char** argv)
         i++;
     }
     TimerPool::Stop("PrepareTrace");    
+    LOG_INFO(ss.str());
 
     LOG_INFO("loading partition index from lustre to local directory");
     TimerPool::Start("LoadIndex");

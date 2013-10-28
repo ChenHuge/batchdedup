@@ -445,7 +445,7 @@ vector<vector<vector<double> > >::iterator pick_min_ucow_round(vector<vector<vec
 }
 */
 //finds the round which will be the shortest in duration after adding the vm
-vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vector<int> > > &round_schedules, vector<map<int, double> > &machines, int mid, map<int,double>::const_iterator vm) {
+vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vector<int> > > &round_schedules, const vector<map<int, double> > &machines, int mid, map<int,double>::const_iterator vm) {
     //double max_size;
     //int max_mid;
     //double total_size = measure_load(machines, max_size,max_mid);
@@ -464,7 +464,8 @@ vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vec
                 //cerr << ss.str();
                 //int vid = ((*round)[i][j]);
                 //machine_load[vid] = machines[i][vid];
-                machine_load[(*round)[i][j]] = machines[i][((*round)[i][j])];
+                map<int,double>::const_iterator it = machines[i].find((*round)[i][j]);
+                machine_load[(*round)[i][j]] = it->second;
             }
             loads.push_back(machine_load);
         }
@@ -641,6 +642,17 @@ const char * DBPScheduler::getName() {
     return "Dual Bin Packing Scheduler 1 (ucow sort)";
 }
 */
+
+
+void print_loads(vector<map<int,double> > machines) {
+    for(vector<map<int,double> >::iterator i = machines.begin(); i != machines.end(); ++i) {
+        for (map<int, double>::iterator j = (*i).begin(); j != (*i).end(); ++j) {
+            cout << "load[" << (i - machines.begin()) << "][" << j->first << "] = " << j->second << " ";
+        }
+        cout << endl;
+    }
+}
+
 double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
     //cout << "About to start packing vms into " << rounds << " rounds" << endl;
     round_schedules.clear();
@@ -662,22 +674,25 @@ double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
     stringstream ss;
     while ((vm = pick_max_tdelta_vm(machines,mid)) != machines[0].end()) {
         //ss << "picked " << (vm - machines[mid].begin()) << "(" << *vm << " bytes) on machine " << mid << endl;
-        cerr << ss.str();
-        ss.str("");
-        ss.clear();
-
-        round = pick_min_newtime_round(round_schedules, machines, mid, vm);
+        //cerr << ss.str();
+        //ss.str("");
+        //ss.clear();
+        //print_loads(machines);
+        //cout << endl;
+        round = pick_min_newtime_round(round_schedules, this->machines, mid, vm);
         //ss << "  picked round for vm" << endl;
-        cerr << ss.str();
-        ss.str("");
-        ss.clear();
+        //cerr << ss.str();
+        //ss.str("");
+        //ss.clear();
         (*round)[mid].push_back(vm->first); //we push the index of the vm, not the size
         //cerr << "  pushed vm" << endl;
+        //cout << "count was: " << machines[mid].size();
         machines[mid].erase(vm);
+        //cout << "; picked [" << mid << "][" << vm->first << "]" << "; count is: " << machines[mid].size() << endl;
         //ss << "  erased vm" << endl;
-        cerr << ss.str();
-        ss.str("");
-        ss.clear();
+        //cerr << ss.str();
+        //ss.str("");
+        //ss.clear();
     }
     //cerr << "finished scheduling vms" << endl;
 

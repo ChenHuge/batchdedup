@@ -5,7 +5,7 @@
 using namespace std;
 
 //#define DEFAULT_TIME_LIMIT (60*60*3)
-#define DEFAULT_TIME_LIMIT (60*60*3)
+#define DEFAULT_TIME_LIMIT (60)
 //#define DEFAULT_DIRTY_RATIO 0.10
 #define DEFAULT_SEGMENT_DIRTY_RATIO 0.2
 #define DEFAULT_FP_RATIO 0.5

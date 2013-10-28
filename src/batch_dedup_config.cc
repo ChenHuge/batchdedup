@@ -81,9 +81,9 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
             map<int,double> empty_machine;
             loads.push_back(empty_machine);
         }
-        stringstream ss;
-        ss << ">> loads[" << (VmidToMid(i)) << "].add " << samplesizes[VmidToSid(i)] << endl;
-        cerr << ss.str();
+        //stringstream ss;
+        //ss << ">> loads[" << (VmidToMid(i)) << "].add " << samplesizes[VmidToSid(i)] << endl;
+        //cerr << ss.str();
         loads[VmidToMid(i)][i] = samplesizes[VmidToSid(i)];
     }
     //first construct vm/machine loads (we need to estimate machine size for this)
@@ -101,10 +101,10 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
         for(int i = 0; i < round_schedule[mRank].size(); i++) {
             //round_schedule[mRank][i] = LvmidToVmid(round_schedule[mRank][i]);
             round_schedule[mRank][i] = round_schedule[mRank][i];
-            stringstream ss;
-            //ss << ">> schedule[" << mRank << "][" << i << "] = lvmtovm(" << round_schedule[mRank][i] << ") = " << LvmidToVmid(round_schedule[mRank][i]) << endl;
-            ss << ">> schedule[" << mRank << "][" << i << "] = " << round_schedule[mRank][i] << endl;
-            cerr << ss.str();
+            //stringstream ss;
+            ////ss << ">> schedule[" << mRank << "][" << i << "] = lvmtovm(" << round_schedule[mRank][i] << ") = " << LvmidToVmid(round_schedule[mRank][i]) << endl;
+            //ss << ">> schedule[" << mRank << "][" << i << "] = " << round_schedule[mRank][i] << endl;
+            //cerr << ss.str();
         }
         mMyVmSchedule.push_back(round_schedule[mRank]);
     }
@@ -267,7 +267,7 @@ int Env::GetVmId(size_t idx)
     }
 
     if (mRound < mMyVmSchedule.size() && idx < mMyVmSchedule[mRound].size()) {
-        cout << "Machine " << mRank << " round[" << mRound << "," << idx << "] = " << mMyVmSchedule[mRound][idx] << endl;
+        //cout << "Machine " << mRank << " round[" << mRound << "," << idx << "] = " << mMyVmSchedule[mRound][idx] << endl;
         return mMyVmSchedule[mRound][idx];
     }
     else {
