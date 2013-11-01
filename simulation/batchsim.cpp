@@ -311,7 +311,7 @@ int main (int argc, char *argv[]) {
 
     //get total size/count of the vms
     int total_vms = 0;
-    int total_vm_size = 0;
+    double total_vm_size = 0;
     for(vector<vector<double> >::const_iterator machine = machinelist.begin(); machine != machinelist.end(); ++machine) {
         for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
             total_vms++;

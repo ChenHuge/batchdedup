@@ -59,6 +59,9 @@ public:
     static int  GetNumVms();
     static int  GetNumVmsPerNode();
 
+    static void SetTimeLimit(int t);
+    static int GetTimeLimit();
+
     static void SetNumSnapshots(int num);
     static int  GetNumSnapshots();
 
@@ -129,6 +132,7 @@ private:
     static int            mNumPartitions;
     static int            mNumVms;
     static int            mNumSnapshots;
+    static int            mTimeLimit;
     static size_t         mMpiBufSize;
     static char*          mSendBuf;
     static char*          mRecvBuf;

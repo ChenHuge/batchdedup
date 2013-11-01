@@ -149,6 +149,14 @@ void init(int argc, char** argv)
             }
             snapshot_file = argv[argi++];
             snapshotfile_set = true;
+        } else if (strcmp(argv[argi],"--timelimit") == 0) {
+            argi++;
+            if (argi >= argc) {
+                cout << "No time limit given" << endl;
+                usage(argv[0]);
+                exit(1);
+            }
+            Env::SetTimeLimit(atoi(argv[argi++]));
         } else if (strcmp(argv[argi],"-?") == 0) {
             usage(argv[0]);
             exit(0);
@@ -257,6 +265,7 @@ int main(int argc, char** argv)
     while (Env::InitRound(round)) {
         round++;
         LOG_INFO("Starting Round " << round);
+        TimerPool::Start("RoundTime");
 
         struct pstat begin, end;
         pid_t mypid = getpid();
@@ -475,12 +484,20 @@ int main(int argc, char** argv)
             system(cmd.str().c_str());
         }
         TimerPool::Stop("UploadIndex");
+        //
+        //the stop is implicit
+        //TimerPool::Stop("Deduplication");
+        //TimerPool::Stop("RoundTime");
 
-        TimerPool::Stop("Total");
         TimerPool::PrintAll();
+        TimerPool::Start("Total"); //print stops the timer, so we must restart
+        TimerPool::Start("Deduplication");
+        TimerPool::Reset("RoundTime"); //we want round time to be per-round
 
-        // clean up
     }
+    // clean up
+        //TimerPool::Stop("Total"); //implicit in print
+        //TimerPool::PrintAll();
     delete[] send_buf;
     delete[] recv_buf;
     final();

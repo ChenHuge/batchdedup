@@ -58,7 +58,7 @@ bool TraceReader::GetRecord(DataRecord*& pdata)
                 LOG_ERROR("can not open trace: " << fname);
                 return false;
             }
-            cout << "M" << Env::GetRank() << " reading vm " << vmid;
+            LOG_INFO("Reading vm " << vmid);
             LOG_DEBUG("now reading trace " << fname);
         }
 

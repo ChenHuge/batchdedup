@@ -80,10 +80,12 @@ class DBPScheduler2 : public RoundScheduler{
     public:
         bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
+        DBPScheduler2();
     private:
         vector<vector<vector<int> > > round_schedules;
         double pack_vms(vector<map<int, double> > machines,int rounds);
         void schedule_vms(vector<map<int, double> > &machines);
+        bool scheduled;
 };
 
 /*class OneEachScheduler : public BackupScheduler{

@@ -20,6 +20,7 @@ int            Env::mRank = -1;
 int            Env::mNumTasks = -1;
 int            Env::mNumPartitions = -1;
 int            Env::mNumVms = -1;
+int            Env::mTimeLimit = 60*60*3;
 int            Env::mNumSnapshots = -1;
 size_t         Env::mMpiBufSize = 0;
 char*          Env::mSendBuf = NULL;
@@ -90,25 +91,31 @@ void Env::ScheduleVMs(RoundScheduler* scheduler)
     //then run scheduler until finished,
     //adding this machine's schedule for each round
     scheduler->setMachineList(loads);
-    scheduler->setTimeLimit(60*60*3);
+    scheduler->setTimeLimit(Env::GetTimeLimit());
+    //scheduler->setTimeLimit(1439);
     vector<vector<int> > round_schedule;
+    stringstream ss;
+    ss << "VMS scheduled here:";
     while (scheduler->schedule_round(round_schedule)) {
         //cout << "adding round:";
         //for(int i = 0; i < round_schedule[mRank].size(); i++) {
         //    cout << " " << round_schedule[mRank][i];
         //}
         //cout << endl;
+        ss << " { ";
         for(int i = 0; i < round_schedule[mRank].size(); i++) {
             //round_schedule[mRank][i] = LvmidToVmid(round_schedule[mRank][i]);
-            round_schedule[mRank][i] = round_schedule[mRank][i];
+            //round_schedule[mRank][i] = round_schedule[mRank][i];
+            ss << round_schedule[mRank][i] << "->" << samplesizes[VmidToSid(round_schedule[mRank][i])] << " ";
             //stringstream ss;
             ////ss << ">> schedule[" << mRank << "][" << i << "] = lvmtovm(" << round_schedule[mRank][i] << ") = " << LvmidToVmid(round_schedule[mRank][i]) << endl;
             //ss << ">> schedule[" << mRank << "][" << i << "] = " << round_schedule[mRank][i] << endl;
             //cerr << ss.str();
         }
+        ss << "}";
         mMyVmSchedule.push_back(round_schedule[mRank]);
     }
-
+    LOG_INFO(ss.str());
 }
 
 void Env::SetRank(int rank) 
@@ -204,6 +211,14 @@ void Env::SetNumSnapshots(int num)
 int Env::GetNumSnapshots() 
 {
     return mNumSnapshots; 
+}
+
+void Env::SetTimeLimit(int t) {
+    mTimeLimit = t;
+}
+
+int Env::GetTimeLimit() {
+    return mTimeLimit;
 }
 
 string Env::GetSampleTrace(int vmid) 
