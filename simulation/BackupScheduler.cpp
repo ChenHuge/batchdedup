@@ -1,5 +1,6 @@
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "BackupScheduler.h"
 
 
@@ -759,4 +760,203 @@ bool CowScheduler::schedule_round(std::vector<std::vector<double> > &round_sched
 
 const char * CowScheduler::getName() {
     return "CoW Scheduler";
+}
+
+
+double BinPackLocalScheduler::pack_vms(vector<vector<double> > machines,int rounds) {
+    round_schedules.clear();
+    vector<vector<double> > machine_schedule; //empty machine schedule
+    vector<double> vmschedule; //empty vm schedule
+    //fill machine_schedule with p empty vectors (one for each machine)
+    for(int i = 0; i < machines.size(); i++) {
+        machine_schedule.push_back(vmschedule);
+    }
+    //add r empty schedules
+    for(int i = 0; i < rounds; i++) {
+        round_schedules.push_back(machine_schedule);
+    }
+
+    //loop through the machines
+    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+        std::sort((*machine).begin(), (*machine).end());
+        int mid = machine - machines.begin();
+        //loop through the descending order sorted vms for this machine
+        for(vector<double>::iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
+            vector<vector<vector<double> > >::iterator min_round = round_schedules.end();
+            double min_round_load;
+            //find the least loaded round for this machine
+            for(vector<vector<vector<double> > >::iterator rload = round_schedules.begin(); rload != round_schedules.end(); ++rload) {
+                double round_load = 0;
+                //for(vector<vector<double> >::cost_iterator mload = (*rload).begin(); mload != (*rload).end(); ++mload) {
+                for(vector<double>::const_iterator vload = (*rload)[mid].begin(); vload != (*rload)[mid].end(); ++vload) {
+                    round_load += *vload;
+                }
+                //}
+                if (min_round == round_schedules.end() || round_load < min_round_load) {
+                    min_round_load = round_load;
+                    min_round = rload;
+                }
+            }
+            //schedule this vm to the least loaded round for this machine
+            (*min_round)[mid].push_back(*vm);
+        }
+    }
+
+    double schedule_time = 0;
+    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
+            round != round_schedules.end(); ++round) {
+        schedule_time += model_time(*round,false);
+    }
+    return schedule_time;
+}
+
+void BinPackLocalScheduler::schedule_vms(vector<vector<double> > &machines) {
+    int total_count = 0;
+    int total_size = 0;
+    double schedule_time;
+    for(vector<vector<double> >::iterator machine = machines.begin();
+            machine != machines.end(); ++machine) {
+        for(vector<double>::iterator vm = (*machine).begin();
+                vm != (*machine).end(); ++vm) {
+            total_count++;
+            total_size += *vm;
+        }
+    }
+    cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
+    int UB = 2*total_count/machines.size();
+    if (UB > total_count) {
+        UB = total_count;
+    }
+    int LB = 1;
+    while (UB > LB) {
+        int N=(UB+LB+1)/2;
+        schedule_time = pack_vms(machines,N);
+        cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+        if (schedule_time > time_limit) {
+            UB=N-1;
+        } else {
+            LB=N;
+        }
+    }
+    schedule_time = pack_vms(machines,UB);
+    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+}
+
+bool BinPackLocalScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
+    if (machines.empty() && round_schedules.empty()) {
+        return false;
+    } else if (!round_schedules.empty()) {
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        return true;
+    } else {
+        schedule_vms(machines);
+        machines.clear();
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        return true;
+    }
+}
+
+const char * BinPackLocalScheduler::getName() {
+    return "Local BinPacking Scheduler";
+}
+
+double BinPackGlobalScheduler::pack_vms(vector<vector<double> > machines,int rounds) {
+    round_schedules.clear();
+    vector<vector<double> > machine_schedule; //empty machine schedule
+    vector<double> vmschedule; //empty vm schedule
+    //fill machine_schedule with p empty vectors (one for each machine)
+    for(int i = 0; i < machines.size(); i++) {
+        machine_schedule.push_back(vmschedule);
+    }
+    //add r empty schedules
+    for(int i = 0; i < rounds; i++) {
+        round_schedules.push_back(machine_schedule);
+    }
+
+    //loop through the machines
+    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+        std::sort((*machine).begin(), (*machine).end());
+        int mid = machine - machines.begin();
+        //loop through the descending order sorted vms for this machine
+        for(vector<double>::iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
+            vector<vector<vector<double> > >::iterator min_round = round_schedules.end();
+            double min_round_load;
+            //find the least loaded round for this machine
+            for(vector<vector<vector<double> > >::iterator rload = round_schedules.begin(); rload != round_schedules.end(); ++rload) {
+                double round_load = 0;
+                for(vector<vector<double> >::const_iterator mload = (*rload).begin(); mload != (*rload).end(); ++mload) {
+                    for(vector<double>::const_iterator vload = (*mload).begin(); vload != (*mload).end(); ++vload) {
+                        round_load += *vload;
+                    }
+                }
+                if (min_round == round_schedules.end() || round_load < min_round_load) {
+                    min_round_load = round_load;
+                    min_round = rload;
+                }
+            }
+            //schedule this vm to the least loaded round for this machine
+            (*min_round)[mid].push_back(*vm);
+        }
+    }
+
+    double schedule_time = 0;
+    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
+            round != round_schedules.end(); ++round) {
+        schedule_time += model_time(*round,false);
+    }
+    return schedule_time;
+}
+
+void BinPackGlobalScheduler::schedule_vms(vector<vector<double> > &machines) {
+    int total_count = 0;
+    int total_size = 0;
+    double schedule_time;
+    for(vector<vector<double> >::iterator machine = machines.begin();
+            machine != machines.end(); ++machine) {
+        for(vector<double>::iterator vm = (*machine).begin();
+                vm != (*machine).end(); ++vm) {
+            total_count++;
+            total_size += *vm;
+        }
+    }
+    cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
+    int UB = 2*total_count/machines.size();
+    if (UB > total_count) {
+        UB = total_count;
+    }
+    int LB = 1;
+    while (UB > LB) {
+        int N=(UB+LB+1)/2;
+        schedule_time = pack_vms(machines,N);
+        cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+        if (schedule_time > time_limit) {
+            UB=N-1;
+        } else {
+            LB=N;
+        }
+    }
+    schedule_time = pack_vms(machines,UB);
+    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+}
+
+bool BinPackGlobalScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
+    if (machines.empty() && round_schedules.empty()) {
+        return false;
+    } else if (!round_schedules.empty()) {
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        return true;
+    } else {
+        schedule_vms(machines);
+        machines.clear();
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        return true;
+    }
+}
+
+const char * BinPackGlobalScheduler::getName() {
+    return "Global BinPacking Scheduler";
 }

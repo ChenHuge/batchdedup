@@ -88,3 +88,23 @@ class DBPN2Scheduler : public BackupScheduler{
         double pack_vms(vector<vector<double> > machines,int rounds);
         void schedule_vms(vector<vector<double> > &machines);
 };
+
+class BinPackLocalScheduler : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+    private:
+        vector<vector<vector<double> > > round_schedules;
+        double pack_vms(vector<vector<double> > machines,int rounds);
+        void schedule_vms(vector<vector<double> > &machines);
+};
+
+class BinPackGlobalScheduler : public BackupScheduler{
+    public:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        const char * getName();
+    private:
+        vector<vector<vector<double> > > round_schedules;
+        double pack_vms(vector<vector<double> > machines,int rounds);
+        void schedule_vms(vector<vector<double> > &machines);
+};

@@ -117,6 +117,7 @@ void usage(const char* progname) {
         "  --cowschedule - basic cow based scheduler" << endl <<
         "  --dbpschedule - scheduler based on Dual Bin Packing (involves uCoW)" << endl <<
         "  --dbpschedule2 - improved scheduler based on Dual Bin Packing (uses time only)" << endl << 
+        "  --bpschedule - machine by machine scheduler which uses basic bin packing" << endl << 
         "  --dbpn1schedule - Naive Dual Bin Packing scheduler" << endl <<
         "  --dbpn2schedule - Naive Dual Bin Packing scheduler 2" << 
         endl;
@@ -173,7 +174,13 @@ int main (int argc, char *argv[]) {
         } else if (!strcmp(argv[argi],"--dbpn2schedule")) {
             argi++;
             schedulers.push_back(new DBPN2Scheduler());
-        } 
+        } else if (!strcmp(argv[argi],"--bplschedule")) {
+            argi++;
+            schedulers.push_back(new BinPackLocalScheduler());
+        } else if (!strcmp(argv[argi],"--bpgschedule")) {
+            argi++;
+            schedulers.push_back(new BinPackGlobalScheduler());
+        }
         //Below here is the arg parsing for modeling parameters
         else if (!strcmp(argv[argi],"--machinefile") || !strcmp(argv[argi],"-m")) {
             machinefile=argv[++argi];
