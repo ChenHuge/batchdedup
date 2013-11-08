@@ -331,6 +331,7 @@ int main (int argc, char *argv[]) {
         int round = 1;
         double total_time = 0;
         double total_cow = 0;
+        double avg_backup = 0;
         vector<vector<double> > schedule;
         cout << "Total data to schedule: " << total_size(machinelist) << "GB" << endl;
         (*scheduler)->setMachineList(machinelist);
@@ -352,15 +353,15 @@ int main (int argc, char *argv[]) {
                 //cout << endl;
             }
             cout << "  Round " << round << ": Data Size=" << round_size << "GB; VMs=" << round_vms << "; Round Time=" << format_time(round_time) << 
-                "; Avg VM Time=" << format_time(round_time/round_vms) <<
                 "; Round CoW: " << round_cow << "GB" << endl;
             total_time += round_time;
             total_cow += round_cow;
+            avg_backup += round_time * round_vms;
             schedule.clear();
             round++;
         }
         cout << "  Total Data: " << total_vm_size << "GB; Total VMs: " << total_vms << "; Total Time: " << format_time(total_time) << 
-            "; Total Avg VM Time: " << format_time(total_time/total_vms) << 
+            "; Total Avg VM Time: " << format_time(avg_backup/total_vms) << 
             "; CoW Cost: " << total_cow << "GB" << endl;
     }
     //cleanup
