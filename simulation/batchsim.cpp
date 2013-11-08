@@ -352,6 +352,7 @@ int main (int argc, char *argv[]) {
                 //cout << endl;
             }
             cout << "  Round " << round << ": Data Size=" << round_size << "GB; VMs=" << round_vms << "; Round Time=" << format_time(round_time) << 
+                "; Avg VM Time=" << format_time(round_time/round_vms) <<
                 "; Round CoW: " << round_cow << "GB" << endl;
             total_time += round_time;
             total_cow += round_cow;
@@ -359,6 +360,7 @@ int main (int argc, char *argv[]) {
             round++;
         }
         cout << "  Total Data: " << total_vm_size << "GB; Total VMs: " << total_vms << "; Total Time: " << format_time(total_time) << 
+            "; Total Avg VM Time: " << format_time(total_time/total_vms) << 
             "; CoW Cost: " << total_cow << "GB" << endl;
     }
     //cleanup
