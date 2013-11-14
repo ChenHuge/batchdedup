@@ -41,7 +41,7 @@ string format_time(double seconds) {
     return ss.str();
 }
 
-void print_settings(double time_limit) {
+string print_settings(double time_limit) {
     stringstream ss;
     ss << "Current Settings:" << endl <<
         //"  dirty ratio: " << dirty_ratio << endl <<
@@ -57,7 +57,7 @@ void print_settings(double time_limit) {
         "  machine index size: " << n << " entries" << endl <<
         "  time limit: " << format_time(time_limit) << endl <<
         "  c=" << c << "; u=" << u << "; e=" << e << endl;
-    cerr << ss.str();
+    return ss.str();
 }
 
 double model_time(double max_size, double total_size, int p, bool verbose) {
@@ -853,7 +853,7 @@ bool DBPScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedul
         //print_schedules(round_schedules);
         //cout << format_time(model_time(machines,true));
         machines.clear(); //TODO: is this a problem?
-        //print_settings(time_limit);
+        //cerr << print_settings(time_limit);
         round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
         round_schedules.pop_back();
         //print_schedules(round_schedules);

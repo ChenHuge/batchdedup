@@ -40,6 +40,15 @@ class OneScheduler : public BackupScheduler{
         bool schedule_round(std::vector<std::vector<double> > &round_schedule);
         const char * getName();
 };
+
+//May not need this, but could condense all the repeated binary search code
+class BinarySearchScheduler : public BackupScheduler {
+    protected:
+        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        vector<vector<vector<double> > > round_schedules;
+        virtual double pack_vms(vector<vector<double> > machines,int rounds) = 0;
+        void schedule_vms(vector<vector<double> > &machines);
+}
         
 class CowScheduler : public BackupScheduler{
     public:

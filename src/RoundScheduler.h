@@ -45,7 +45,24 @@ using namespace std;
 //this constant still needs to be determined, as it is important to CoW cost
 #define COW_CONSTANT 0.5
 
+extern double segment_dirty_ratio;
+extern double fp_ratio;
+extern double dupnew_ratio; //dup-new ratio, as a fration of r
+extern double net_latency;
+extern double read_bandwidth;
+extern double disk_write_bandwidth;
+//extern double backend_write_bandwidth;
+extern double lookup_time;
+extern double network_memory;
+extern double write_rate;
+extern double n;
+extern double u;
+extern double e;
+extern double c;
 
+
+string print_settings(double time_limit);
+string format_time(double seconds);
 //double total_size(const vector<vector<double> > &machine_loads);
 double model_time(const vector<vector<double> > &machine_loads, bool verbose);
 double model_time2(const vector<vector<double> > &machine_loads, int mid, int vmsize, bool verbose);
@@ -58,6 +75,7 @@ double model_round_cow(const vector<vector<double> > &machine_loads);
 double measure_load(const vector<vector<double> > &machine_loads, double &max_size, int &max_mid);
 
 double model_time(double max_size, double total_size, int p, bool verbose);
+double model_time(const vector<map<int, double> > &machine_loads, bool verbose);
 
 class RoundScheduler {
     public:

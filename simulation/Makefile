@@ -6,19 +6,22 @@ all: batchsim wlgen
 .PHONY: debug
 debug: batchsim-debug
 
-batchsim-debug: batchsim.cpp BackupScheduler.cpp BackupScheduler.h
-	$(CXX) -o $@ batchsim.cpp BackupScheduler.cpp -g
+batchsim-debug: batchsim.cc ../src/RoundScheduler.cc ../src/RoundScheduler.h
+	$(CXX) -o $@ batchsim.cc ../src/RoundScheduler.cc -g
 
-batchsim: batchsim.o BackupScheduler.o
+batchsim: batchsim.o RoundScheduler.o
 	$(CXX) -o $@ $^
 
 wlgen: wlgen.o WLGenerator.o
 	$(CXX) -o $@ $^
 
-%.o: %.cpp %.h
+RoundScheduler.o: ../src/RoundScheduler.cc ../src/RoundScheduler.h
 	$(CXX) -c -o $@ $<
 
-%.o: %.cpp
+%.o: %.cc %.h
+	$(CXX) -c -o $@ $<
+
+%.o: %.cc
 	$(CXX) -c -o $@ $<
 
 .PHONY: clean
