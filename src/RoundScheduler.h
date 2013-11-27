@@ -88,13 +88,23 @@ class RoundScheduler {
         double time_limit;
 };
 
+//class BinarySearchScheduler : public RoundScheduler {
+//    public:
+//        bool schedule_round(std::vector<std::vector<int> > &round_schedule);
+//    protected:
+//        vector<vector<vector<int> > > round_schedules;
+//        virtual double pack_vms(vector<map<int, double> > machines,int rounds) = 0;
+//        void schedule_vms(vector<map<int, double> > &machines);
+//        bool scheduled;
+//};
+
 class NullScheduler : public RoundScheduler{
     public:
         bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
 };
 
-class DBPScheduler2 : public RoundScheduler{
+class DBPScheduler2 : public RoundScheduler {
     public:
         bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
@@ -106,53 +116,30 @@ class DBPScheduler2 : public RoundScheduler{
         bool scheduled;
 };
 
-/*class OneEachScheduler : public BackupScheduler{
+class BPLScheduler : public RoundScheduler {
     public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
-};
-        
-class OneScheduler : public BackupScheduler{
-    public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
-        const char * getName();
-};
-        
-class CowScheduler : public BackupScheduler{
-    public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
-        const char * getName();
+        BPLScheduler();
     private:
-        vector<vector<vector<double> > > round_schedules;
+        vector<vector<vector<int> > > round_schedules;
+        double pack_vms(vector<map<int, double> > machines,int rounds);
+        void schedule_vms(vector<map<int, double> > &machines);
+        bool scheduled;
 };
 
-class DBPScheduler : public BackupScheduler{
+class BPLScheduler2: public RoundScheduler {
     public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
+        bool schedule_round(std::vector<std::vector<int> > &round_schedule);
         const char * getName();
+        BPLScheduler2();
+        BPLScheduler2(double alpha);
     private:
-        vector<vector<vector<double> > > round_schedules;
-        double pack_vms(vector<vector<double> > machines,int rounds);
-        void schedule_vms(vector<vector<double> > &machines);
+        vector<vector<vector<int> > > round_schedules;
+        double pack_vms(vector<map<int, double> > machines,int rounds);
+        void schedule_vms(vector<map<int, double> > &machines);
+        bool scheduled;
+        double alpha;
 };
 
-class DBPN1Scheduler : public BackupScheduler{
-    public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
-        const char * getName();
-    private:
-        vector<vector<vector<double> > > round_schedules;
-        double pack_vms(vector<vector<double> > machines,int rounds);
-        void schedule_vms(vector<vector<double> > &machines);
-};
-
-class DBPN2Scheduler : public BackupScheduler{
-    public:
-        bool schedule_round(std::vector<std::vector<double> > &round_schedule);
-        const char * getName();
-    private:
-        vector<vector<vector<double> > > round_schedules;
-        double pack_vms(vector<vector<double> > machines,int rounds);
-        void schedule_vms(vector<vector<double> > &machines);
-};*/
 #endif

@@ -1,4 +1,6 @@
 #include <vector>
+#include <map>
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include "RoundScheduler.h"
@@ -246,9 +248,6 @@ bool NullScheduler::schedule_round(std::vector<std::vector<int> > &round_schedul
     }
     for(int i = 0; i < machines.size(); i++) {
         vector<int> machine_schedule;
-        //for(int j = 0; j < machines[i].size(); j++) {
-        //    machine_schedule.push_back(j);
-        //}
         for(map<int,double>::iterator j = machines[i].begin(); j != machines[i].end(); ++j) {
             machine_schedule.push_back(j->first);
         }
@@ -262,139 +261,6 @@ const char * NullScheduler::getName() {
     return "Null Scheduler";
 }
 
-/*bool OneEachScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    if (machines.size() < 1) {
-        return false;
-    }
-    bool schedule = false;
-    for(vector<vector<double> >::const_iterator machine = machines.begin(); machine != machines.end(); ++machine) {
-        if ((*machine).size() > 0) {
-            schedule = true;
-            break;
-        }
-    }
-    if (!schedule) {
-        return false;
-    }
-
-    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
-        vector<double> machine_schedule;
-        if ((*machine).size() > 0) {
-            machine_schedule.push_back((*machine).back());
-            (*machine).pop_back();
-        }
-        round_schedule.push_back(machine_schedule);
-    }
-    return true;
-}
-
-const char * OneEachScheduler::getName() {
-    return "One Each Scheduler";
-}
-
-bool OneScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    if (machines.size() < 1) {
-        return false;
-    }
-    bool schedule = false;
-    for(vector<vector<double> >::const_iterator machine = machines.begin(); machine != machines.end(); ++machine) {
-        if ((*machine).size() > 0) {
-            schedule = true;
-            break;
-        }
-    }
-    if (!schedule) {
-        return false;
-    }
-
-    bool scheduled = false;
-    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
-        vector<double> machine_schedule;
-        if (!scheduled && (*machine).size() > 0) {
-            //schedules vms in reverse order (because pop_back is cheaper than removing first element)
-            scheduled = true;
-            machine_schedule.push_back((*machine).back());
-            (*machine).pop_back();
-        }
-        round_schedule.push_back(machine_schedule);
-    }
-    return true;
-}
-
-const char * OneScheduler::getName() {
-    return "One Scheduler";
-}
-
-//picks the biggest vm (tiebreaker: left-most)
-vector<double>::iterator pick_biggest_vm(vector<vector<double> > &machines, int &mid) {
-    mid = 0;
-    vector<double>::iterator max_vm = machines[0].end();
-    for(int i = 0; i < machines.size(); i++) {
-        if (!machines[i].empty()) {
-            max_vm = machines[i].begin();
-            mid = i;
-            break;
-        }
-    }
-    if (max_vm == machines[0].end()) {
-        mid = -1;
-        return max_vm;
-    }
-    
-    for(int i = 0; i < machines.size(); i++) {
-        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
-            if (*vm > *max_vm) {
-                mid = i;
-                max_vm = vm;
-            }
-        }
-    }
-    return max_vm;
-}
-
-//picks the vm which will decrease single-round time the most
-//tie-breaker:picks the vm on the machine with the greatest load
-vector<double>::iterator pick_vm(vector<vector<double> > &machines, int &mid) {
-    mid = 0;
-    double schedule_time = model_time(machines, false);
-    vector<double>::iterator max_vm = machines[0].end();
-    for(int i = 0; i < machines.size(); i++) {
-        if (!machines[i].empty()) {
-            max_vm = machines[i].begin();
-            mid = i;
-            break;
-        }
-    }
-    if (max_vm == machines[0].end()) {
-        mid = -1;
-        return max_vm;
-    }
-    
-    double max_cow = model_unneccessary_cow(*max_vm, 0.2, schedule_time);
-    double max_cow_load = 0;
-
-    for(vector<double>::iterator vm = machines[mid].begin(); vm != machines[mid].end(); ++vm) {
-        max_cow_load += *vm;
-    }
-
-    for(int i = 0; i < machines.size(); i++) {
-        double machine_load = 0;
-        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
-            machine_load += *vm;
-        }
-        for(vector<double>::iterator vm = machines[i].begin(); vm != machines[i].end(); ++vm) {
-            double cow = model_unneccessary_cow(*vm, 0.2, schedule_time);
-            if (cow > max_cow || (cow == max_cow && machine_load > max_cow_load)) {
-                mid = i;
-                max_vm = vm;
-                max_cow = cow;
-                max_cow_load = machine_load;
-            }
-        }
-    }
-    return max_vm;
-}
-*/
 //measures round duration after removing the specified vm from the specified machine
 double model_rtime(const vector<map<int, double> > &machines, int mid, double vm) {
     return model_time2(machines,mid,-vm,false);
@@ -447,23 +313,7 @@ map<int, double>::iterator pick_max_tdelta_vm(vector<map<int, double> > &machine
     }
     return best_vm;
 }
-/*
-//pick round for which this vm has the smallest ucow
-vector<vector<vector<double> > >::iterator pick_min_ucow_round(vector<vector<vector<double> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
-    vector<vector<vector<double> > >::iterator best_round = round_schedules.begin();
-    double best_ucow = model_unneccessary_cow(*vm, 0.2, model_time(*best_round,false));
-    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin()+1;
-            round != round_schedules.end(); ++round) {
-        double schedule_time = model_time(*round, false);
-        double ucow = model_unneccessary_cow(*vm, 0.2, schedule_time);
-        if (ucow < best_ucow) {
-            best_round = round;
-            best_ucow = ucow;
-        }
-    }
-    return best_round;
-}
-*/
+
 //finds the round which will be the shortest in duration after adding the vm
 vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vector<int> > > &round_schedules, const vector<map<int, double> > &machines, int mid, map<int,double>::const_iterator vm) {
     //double max_size;
@@ -499,172 +349,8 @@ vector<vector<vector<int> > >::iterator pick_min_newtime_round(vector<vector<vec
     //cerr << "returning from pick_min_newtime" << endl;
     return best_round;
 }
-/*
-//finds the round which is currently shortest in duration
-vector<vector<vector<double> > >::iterator pick_min_time_round(vector<vector<vector<double> > > &round_schedules, const vector<vector<double> > &machines, int mid, vector<double>::const_iterator vm) {
-    vector<vector<vector<double> > >::iterator best_round = round_schedules.end();
-    double best_time;
-    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
-            round != round_schedules.end(); ++round) {
-        //double time = model_time_delta(*round, mid, *vm);
-        double time = model_time(*round,false);
-        if (best_round == round_schedules.end() || time < best_time) {
-            best_round = round;
-            best_time = time;
-        }
-    }
-    return best_round;
-}
 
-double DBPScheduler::pack_vms(vector<vector<double> > machines,int rounds) {
-    //basic LOWEST FIT DECREASING algorithm:
-    //1. sort items in size-decreasing order
-    //2. while there is an unpacked item
-    //  a. pick the first unpacked item 'a'
-    //  b. pick the bin with the lowest level 'b'
-    //    i. in case of ties use left-most bin
-    //  c. put item a into bin b
-    //3. Halt
-
-    //my packing algorithm (based on LFD)
-    //1. while there is an unpacked item
-    //  a. pick the vm with the highest ucow 'a'
-    //    i. in case of ties take the vm from the machine with the highest load
-    //  b. pick the round whose time will be lowest after adding a 'b'
-    //    i. in case of ties pick the left-most round
-    //  c. put item a into round b
-    //2. Halt
-
-    round_schedules.clear();
-    vector<vector<double> > machine_schedule; //empty machine schedule
-    vector<double> vmschedule; //empty vm schedule
-    //fill machine_schedule with p empty vectors (one for each machine)
-    for(int i = 0; i < machines.size(); i++) {
-        machine_schedule.push_back(vmschedule);
-    }
-    //add r empty schedules
-    for(int i = 0; i < rounds; i++) {
-        round_schedules.push_back(machine_schedule);
-    }
-
-
-
-    vector<double>::iterator vm;
-    vector<vector<vector<double> > >::iterator round;
-    int mid;
-    do {
-        vm = pick_vm(machines,mid);
-        if (vm == machines[0].end()) {
-            break;
-        }
-        round = pick_min_newtime_round(round_schedules, machines, mid, vm);
-        (*round)[mid].push_back(*vm);
-        machines[mid].erase(vm);
-    } while(true);
-
-    double schedule_time = 0;
-    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
-            round != round_schedules.end(); ++round) {
-        schedule_time += model_time(*round,false);
-    }
-    return schedule_time;
-}
-
-void DBPScheduler::schedule_vms(vector<vector<double> > &machines) {
-    //basic ITERATED "A" algorithm:
-    //1. Set UB=min(n,total_size/T)
-    //2. Set LB=1
-    //3. while UB-LB > 1
-    //  a. Set N=(LB+UB)/2
-    //  b. if A(machines,N) >= T, set LB=N
-    //  c. else set UB=N
-    //3. Return packing generated by A(machines,LB)
-    //Note: A(I,N) returns the minimum bin level for packing set I into N bins
-
-    //My scheduler (based on iterated "A"):
-    //1. Set UB=min(n,2*total_vms/machine_count)
-    //2. Set LB=1
-    //3. while UB>LB
-    //  a. set N = (UB+LB+1)/2
-    //  b. if A(machines,N) > time_limit, set UB=N-1
-    //  c. else set LB=N
-    //4. Return packing generated by A(machines,UB)
-    //Note: A(I,N) returns schedule duration for packing set I into N bins
-
-    int total_count = 0;
-    int total_size = 0;
-    double schedule_time;
-    for(vector<vector<double> >::iterator machine = machines.begin();
-            machine != machines.end(); ++machine) {
-        for(vector<double>::iterator vm = (*machine).begin();
-                vm != (*machine).end(); ++vm) {
-            total_count++;
-            total_size += *vm;
-        }
-    }
-    //int T = total_size/7; //in the original alg T was the goal
-    //int UB = total_size/T;
-    //if (UB > total_count) {
-    //    UB = total_count;
-    //}
-    cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
-    int UB = 2*total_count/machines.size(); //one vm per machine per round
-    if (UB > total_count) {
-        UB = total_count;
-    }
-    int LB = 1;
-    while (UB > LB) {
-        int N=(UB+LB+1)/2;
-        schedule_time = pack_vms(machines,N);
-        cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
-        if (schedule_time > time_limit) {
-            UB=N-1;
-        } else {
-            LB=N;
-        }
-    }
-    schedule_time = pack_vms(machines,UB);
-    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
-    //pack_vms(machines,UB);
-}
-
-
-
-void print_loads(const vector<vector<double> > &loads) {
-    //cout << "Machine Loads:" << endl;
-    for(vector<vector<double> >::const_iterator machine = loads.begin(); machine != loads.end(); ++machine) {
-        cout << "  >";
-        for(vector<double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
-            cout << " " << *vm;
-        }
-        cout << endl;
-    }
-    //cout << "End Machines" << endl;
-}
-
-bool DBPScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    if (machines.empty() && round_schedules.empty()) {
-        return false;
-    } else if (!round_schedules.empty()) {
-        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-        round_schedules.pop_back();
-        return true;
-    } else {
-        schedule_vms(machines);
-        machines.clear();
-        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-        round_schedules.pop_back();
-        return true;
-    }
-}
-
-const char * DBPScheduler::getName() {
-    return "Dual Bin Packing Scheduler 1 (ucow sort)";
-}
-*/
-
-
-void print_loads(vector<map<int,double> > machines) {
+string print_loads(vector<map<int,double> > machines) {
     stringstream ss;
     for(vector<map<int,double> >::iterator i = machines.begin(); i != machines.end(); ++i) {
         ss.str("");
@@ -675,44 +361,47 @@ void print_loads(vector<map<int,double> > machines) {
         }
         ss << endl;
     }
-    cout << ss;
+    return ss.str();
 }
 
-void print_loads(vector<vector<vector<int> > > round_schedules, vector<map<int,double> > machines) {
-    cout << "Loads: " << endl;
+string print_loads(vector<vector<vector<int> > > round_schedules, vector<map<int,double> > machines) {
+    stringstream ss;
+    ss << "Loads: " << endl;
     for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        cout << "Round Load:";
+        ss << "Round Load:";
         for(int i = 0; i < (*round).size(); i++) {
-            cout << " { ";
+            ss << " { ";
             for(int j = 0; j < (*round)[i].size(); j++) {
                 map<int,double>::const_iterator it = machines[i].find((*round)[i][j]);
-                cout << it->first << "->" << it->second << " ";
+                ss << it->first << "->" << it->second << " ";
             }
-            cout << "}";
+            ss << "}";
         }
-        cout << endl;
+        ss << endl;
     }
+    return ss.str();
 }
 
-void print_schedules(vector<vector<vector<int> > > round_schedules) {
-    cout << "Schedules: " << endl;
+string print_schedules(vector<vector<vector<int> > > round_schedules) {
+    stringstream ss;
+    ss << "Schedules: " << endl;
     for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        cout << "Round Load:";
+        ss << "Round Load:";
         for(int i = 0; i < (*round).size(); i++) {
-            cout << " { ";
+            ss << " { ";
             for(int j = 0; j < (*round)[i].size(); j++) {
-                cout << (*round)[i][j] << " ";
+                ss << (*round)[i][j] << " ";
             }
-            cout << "}";
+            ss << "}";
         }
-        cout << endl;
+        ss << endl;
     }
+    return ss.str();
 }
 
 double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
-    //cout << "About to start packing vms into " << rounds << " rounds" << endl;
     round_schedules.clear();
     vector<vector<int> > machine_schedule; //empty machine schedule
     vector<int> vmschedule; //empty vm schedule
@@ -731,41 +420,15 @@ double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
     int mid;
     stringstream ss;
     while ((vm = pick_max_tdelta_vm(machines,mid)) != machines[0].end()) {
-        //ss << "picked " << (vm - machines[mid].begin()) << "(" << *vm << " bytes) on machine " << mid << endl;
-        //cerr << ss.str();
-        //ss.str("");
-        //ss.clear();
-        //print_loads(machines);
-        //cout << endl;
         round = pick_min_newtime_round(round_schedules, this->machines, mid, vm);
-        //ss << "  picked round for vm" << endl;
-        //cerr << ss.str();
-        //ss.str("");
-        //ss.clear();
         (*round)[mid].push_back(vm->first); //we push the index of the vm, not the size
-        //cerr << "  pushed vm" << endl;
-        //cout << "count was: " << machines[mid].size() << endl;
         machines[mid].erase(vm);
-        //cout << "picked [" << mid << "][" << vm->first << "->" << vm->second << "] for round " << (round - round_schedules.begin()) << endl;
-        //ss << "  erased vm" << endl;
-        //cerr << ss.str();
-        //ss.str("");
-        //ss.clear();
     }
-    //cerr << "finished scheduling vms" << endl;
 
     double schedule_time = 0;
     for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
         vector<map<int, double> > loads;
-        //ss.str("");
-        //ss.clear();
-        //ss << "load compute" << endl;
-        //for(vector<map<int,double> >::const_iterator mit = machines.begin(); mit != machines.end(); ++mit) {
-        //    for(map<int,double>::const_iterator vit = (*mit).begin(); vit != (*mit).end(); ++vit) {
-        //        ss << "  machine[" << (mit - machines.begin()) << "][" << vit->first << "] = " << vit->second << endl;
-        //    }
-        //}
         for(int i = 0; i < (*round).size(); i++) {
             map<int, double> machine_load;
             for(int j = 0; j < (*round)[i].size(); j++) {
@@ -774,19 +437,11 @@ double DBPScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
                 if (lookup == this->machines[i].end()) {
                     cout << "  machines[" << i << "][" << (*round)[i][j] << "] = NOT FOUND";
                 } else {
-                    //if (lookup == this->machines[i].end()) {
-                    //    ss << "NOT FOUND" << endl;
-                    //} else {
-                    //    ss << lookup->second << endl;
-                    //}
                     machine_load[(*round)[i][j]] = lookup->second;
                 }
             }
             loads.push_back(machine_load);
         }
-        //cout << "modeling round " << (round - round_schedules.begin()) << endl;
-        //ss << "end load compute" << endl;
-        //cout << ss.str();
         schedule_time += model_time(loads,false);
     }
     cout << "Packed VMS to " << rounds << " rounds in " << format_time(schedule_time) << endl;
@@ -839,7 +494,7 @@ bool DBPScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedul
         return false; //finished with schedule
     } else if (!round_schedules.empty()) {
         //have rounds to schedule
-        //print_schedules(round_schedules);
+        //cout << print_schedules(round_schedules);
         round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
         round_schedules.pop_back();
         return true;
@@ -849,14 +504,14 @@ bool DBPScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedul
     } else { //we need to schedule
         schedule_vms(machines);
         scheduled = true;
-        //print_loads(round_schedules, machines);
-        //print_schedules(round_schedules);
+        //cout << print_loads(round_schedules, machines);
+        //cout << print_schedules(round_schedules);
         //cout << format_time(model_time(machines,true));
         machines.clear(); //TODO: is this a problem?
         //cerr << print_settings(time_limit);
         round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
         round_schedules.pop_back();
-        //print_schedules(round_schedules);
+        //cout << print_schedules(round_schedules);
         return true;
     }
 }
@@ -864,11 +519,13 @@ bool DBPScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedul
 const char * DBPScheduler2::getName() {
     return "Dual Bin Packing Scheduler 2 (tdelta sort)";
 }
-/*
-double DBPN1Scheduler::pack_vms(vector<vector<double> > machines,int rounds) {
+
+bool valcompare (pair<int,double> a,pair<int,double> b) { return (a.second < b.second); }
+
+double BPLScheduler::pack_vms(vector<map<int,double> > machines,int rounds) {
     round_schedules.clear();
-    vector<vector<double> > machine_schedule; //empty machine schedule
-    vector<double> vmschedule; //empty vm schedule
+    vector<vector<int> > machine_schedule; //empty machine schedule
+    vector<int> vmschedule; //empty vm schedule
     //fill machine_schedule with p empty vectors (one for each machine)
     for(int i = 0; i < machines.size(); i++) {
         machine_schedule.push_back(vmschedule);
@@ -878,42 +535,70 @@ double DBPN1Scheduler::pack_vms(vector<vector<double> > machines,int rounds) {
         round_schedules.push_back(machine_schedule);
     }
 
-
-
-    vector<double>::iterator vm;
-    vector<vector<vector<double> > >::iterator round;
-    int mid;
-    do {
-        vm = pick_biggest_vm(machines,mid);
-        if (vm == machines[0].end()) {
-            break;
+    //loop through the machines
+    for(vector<map<int,double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+        vector<pair<int,double> > vmlist((*machine).begin(), (*machine).end());
+        std::sort(vmlist.begin(), vmlist.end());
+        int mid = machine - machines.begin();
+        //loop through the descending order sorted vms for this machine
+        for(vector<pair<int,double> >::iterator vm = vmlist.begin(); vm != vmlist.end(); ++vm) {
+            vector<vector<vector<int> > >::iterator min_round = round_schedules.end();
+            double min_round_load;
+            //find the least loaded round for this machine
+            for(vector<vector<vector<int> > >::iterator rload = round_schedules.begin(); rload != round_schedules.end(); ++rload) {
+                double round_load = 0;
+                //for(vector<vector<double> >::cost_iterator mload = (*rload).begin(); mload != (*rload).end(); ++mload) {
+                for(vector<int>::const_iterator vload = (*rload)[mid].begin(); vload != (*rload)[mid].end(); ++vload) {
+                    round_load += machines[mid][*vload];
+                }
+                //}
+                if (min_round == round_schedules.end() || round_load < min_round_load) {
+                    min_round_load = round_load;
+                    min_round = rload;
+                }
+            }
+            //schedule this vm to the least loaded round for this machine
+            (*min_round)[mid].push_back(vm->first);
         }
-        round = pick_min_time_round(round_schedules, machines, mid, vm);
-        (*round)[mid].push_back(*vm);
-        machines[mid].erase(vm);
-    } while(true);
+    }
 
     double schedule_time = 0;
-    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
+    for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        schedule_time += model_time(*round,false);
+        vector<map<int, double> > loads;
+        for(int i = 0; i < (*round).size(); i++) {
+            map<int, double> machine_load;
+            for(int j = 0; j < (*round)[i].size(); j++) {
+                //ss << "  machines[" << i << "][" << (*round)[i][j] << "] = ";
+                map<int,double>::const_iterator lookup = this->machines[i].find((*round)[i][j]);
+                if (lookup == this->machines[i].end()) {
+                    cout << "  machines[" << i << "][" << (*round)[i][j] << "] = NOT FOUND";
+                } else {
+                    machine_load[(*round)[i][j]] = lookup->second;
+                }
+            }
+            loads.push_back(machine_load);
+        }
+        schedule_time += model_time(loads,false);
     }
+    cout << "Packed VMS to " << rounds << " rounds in " << format_time(schedule_time) << endl;
     return schedule_time;
 }
 
-void DBPN1Scheduler::schedule_vms(vector<vector<double> > &machines) {
+void BPLScheduler::schedule_vms(vector<map<int,double> > &machines) {
+    //cout << "About to start scheduling vms" << endl;
     int total_count = 0;
-    int total_size = 0;
+    double total_size = 0;
     double schedule_time;
-    for(vector<vector<double> >::iterator machine = machines.begin();
+    for(vector<map<int, double> >::iterator machine = machines.begin();
             machine != machines.end(); ++machine) {
-        for(vector<double>::iterator vm = (*machine).begin();
+        for(map<int, double>::iterator vm = (*machine).begin();
                 vm != (*machine).end(); ++vm) {
             total_count++;
-            total_size += *vm;
+            total_size += vm->second;
         }
     }
-    cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
+    //cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
     int UB = 2*total_count/machines.size();
     if (UB > total_count) {
         UB = total_count;
@@ -922,7 +607,7 @@ void DBPN1Scheduler::schedule_vms(vector<vector<double> > &machines) {
     while (UB > LB) {
         int N=(UB+LB+1)/2;
         schedule_time = pack_vms(machines,N);
-        cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+        //cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
         if (schedule_time > time_limit) {
             UB=N-1;
         } else {
@@ -930,33 +615,52 @@ void DBPN1Scheduler::schedule_vms(vector<vector<double> > &machines) {
         }
     }
     schedule_time = pack_vms(machines,UB);
-    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+    stringstream ss;
+    ss << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << "; count: " << total_count << "; data: " << total_size << endl;
+    cout << ss.str();
 }
 
-bool DBPN1Scheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    if (machines.empty() && round_schedules.empty()) {
-        return false;
+BPLScheduler::BPLScheduler() {
+    scheduled = false;
+}
+
+bool BPLScheduler::schedule_round(std::vector<std::vector<int> > &round_schedule) {
+    //cout << "About to start scheduling round" << endl;
+    round_schedule.clear();
+    if (scheduled && round_schedules.empty()) {
+        return false; //finished with schedule
     } else if (!round_schedules.empty()) {
+        //have rounds to schedule
+        //cout << print_schedules(round_schedules);
         round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
         round_schedules.pop_back();
         return true;
-    } else {
+    } else if (machines.empty()) {
+        //we haven't been scheduled yet, but there are no machines to schedule
+        return false;
+    } else { //we need to schedule
         schedule_vms(machines);
-        machines.clear();
+        scheduled = true;
+        //cout << print_loads(round_schedules, machines);
+        //cout << print_schedules(round_schedules);
+        //cout << format_time(model_time(machines,true));
+        machines.clear(); //TODO: is this a problem?
+        //cerr << print_settings(time_limit);
         round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
         round_schedules.pop_back();
+        //cout << print_schedules(round_schedules);
         return true;
     }
 }
 
-const char * DBPN1Scheduler::getName() {
-    return "Naive Dual Bin Packing Scheduler 1";
+const char * BPLScheduler::getName() {
+    return "Bin Packing Scheduler w/bin-search";
 }
 
-double DBPN2Scheduler::pack_vms(vector<vector<double> > machines,int rounds) {
+double BPLScheduler2::pack_vms(vector<map<int,double> > machines,int rounds) {
     round_schedules.clear();
-    vector<vector<double> > machine_schedule; //empty machine schedule
-    vector<double> vmschedule; //empty vm schedule
+    vector<vector<int> > machine_schedule; //empty machine schedule
+    vector<int> vmschedule; //empty vm schedule
     //fill machine_schedule with p empty vectors (one for each machine)
     for(int i = 0; i < machines.size(); i++) {
         machine_schedule.push_back(vmschedule);
@@ -966,158 +670,186 @@ double DBPN2Scheduler::pack_vms(vector<vector<double> > machines,int rounds) {
         round_schedules.push_back(machine_schedule);
     }
 
-
-
-    vector<double>::iterator vm;
-    vector<vector<vector<double> > >::iterator round;
-    int mid;
-    do {
-        vm = pick_biggest_vm(machines,mid);
-        if (vm == machines[0].end()) {
-            break;
+    //loop through the machines
+    for(vector<map<int,double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+        vector<pair<int,double> > vmlist((*machine).begin(), (*machine).end());
+        std::sort(vmlist.begin(), vmlist.end());
+        int mid = machine - machines.begin();
+        //loop through the descending order sorted vms for this machine
+        for(vector<pair<int,double> >::iterator vm = vmlist.begin(); vm != vmlist.end(); ++vm) {
+            vector<vector<vector<int> > >::iterator min_round = round_schedules.end();
+            double min_round_load;
+            //find the least loaded round for this machine
+            for(vector<vector<vector<int> > >::iterator rload = round_schedules.begin(); rload != round_schedules.end(); ++rload) {
+                double round_load = 0;
+                //for(vector<vector<double> >::cost_iterator mload = (*rload).begin(); mload != (*rload).end(); ++mload) {
+                for(vector<int>::const_iterator vload = (*rload)[mid].begin(); vload != (*rload)[mid].end(); ++vload) {
+                    round_load += machines[mid][*vload];
+                }
+                //}
+                if (min_round == round_schedules.end() || round_load < min_round_load) {
+                    min_round_load = round_load;
+                    min_round = rload;
+                }
+            }
+            //schedule this vm to the least loaded round for this machine
+            (*min_round)[mid].push_back(vm->first);
         }
-        round = pick_min_newtime_round(round_schedules, machines, mid, vm);
-        (*round)[mid].push_back(*vm);
-        machines[mid].erase(vm);
-    } while(true);
+    }
 
     double schedule_time = 0;
-    for(vector<vector<vector<double> > >::iterator round = round_schedules.begin();
+    for(vector<vector<vector<int> > >::iterator round = round_schedules.begin();
             round != round_schedules.end(); ++round) {
-        schedule_time += model_time(*round,false);
+        vector<map<int, double> > loads;
+        for(int i = 0; i < (*round).size(); i++) {
+            map<int, double> machine_load;
+            for(int j = 0; j < (*round)[i].size(); j++) {
+                //ss << "  machines[" << i << "][" << (*round)[i][j] << "] = ";
+                map<int,double>::const_iterator lookup = this->machines[i].find((*round)[i][j]);
+                if (lookup == this->machines[i].end()) {
+                    cout << "  machines[" << i << "][" << (*round)[i][j] << "] = NOT FOUND";
+                } else {
+                    machine_load[(*round)[i][j]] = lookup->second;
+                }
+            }
+            loads.push_back(machine_load);
+        }
+        schedule_time += model_time(loads,false);
     }
+    cout << "Packed VMS to " << rounds << " rounds in " << format_time(schedule_time) << endl;
     return schedule_time;
 }
 
-void DBPN2Scheduler::schedule_vms(vector<vector<double> > &machines) {
-    int total_count = 0;
-    int total_size = 0;
-    double schedule_time;
-    for(vector<vector<double> >::iterator machine = machines.begin();
-            machine != machines.end(); ++machine) {
-        for(vector<double>::iterator vm = (*machine).begin();
-                vm != (*machine).end(); ++vm) {
-            total_count++;
-            total_size += *vm;
+double bpl2cost(double alpha, double jobspan, double minjobspan,double avgbackup, double minavgbackup) {
+    cout << "cost: " << alpha << " * " << jobspan << "/" << minavgbackup << "  +  " << (1-alpha) << " * " << jobspan << "/" << minjobspan << endl;
+    return alpha*(avgbackup/minavgbackup) + (1-alpha)*(jobspan/minjobspan);
+}
+
+double getminavgbackup(vector<map<int,double> > &machines) {
+    double time = 0;
+    int vm_count;
+    for(vector<map<int, double> >::const_iterator machine = machines.begin(); machine != machines.end(); ++machine) {
+        for(map<int,double>::const_iterator vm = (*machine).begin(); vm != (*machine).end(); ++vm) {
+            time += model_time(vm->second, vm->second, 1, false);
+            vm_count++;
         }
     }
-    cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
-    int UB = 2*total_count/machines.size();
-    if (UB > total_count) {
-        UB = total_count;
-    }
-    int LB = 1;
-    while (UB > LB) {
-        int N=(UB+LB+1)/2;
-        schedule_time = pack_vms(machines,N);
-        cout << "rounds: " << N << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
-        if (schedule_time > time_limit) {
-            UB=N-1;
-        } else {
-            LB=N;
-        }
-    }
-    schedule_time = pack_vms(machines,UB);
-    cout << "final rounds: " << UB << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+    return time / vm_count;
 }
 
-bool DBPN2Scheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    if (machines.empty() && round_schedules.empty()) {
-        return false;
-    } else if (!round_schedules.empty()) {
-        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-        round_schedules.pop_back();
-        return true;
-    } else {
-        schedule_vms(machines);
-        machines.clear();
-        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-        round_schedules.pop_back();
-        return true;
-    }
-}
-
-const char * DBPN2Scheduler::getName() {
-    return "Naive Dual Bin Packing Scheduler 2";
-}
-
-bool CowScheduler::schedule_round(std::vector<std::vector<double> > &round_schedule) {
-    
-    if (machines.empty() && round_schedules.empty()) {
-        return false;
-    } else if (!round_schedules.empty()) {
-        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-        round_schedules.pop_back();
-        return true;
-    }
-    ////first we schedule everything
-    //round_schedule.insert(round_schedule.end(),machines.begin(), machines.end());
-    //machines.clear();
-
-    //first we need to decide how many rounds can be used, then we actually break the work into rounds
-    //when we break the work into rounds, we need to figure out how to split the rounds (an even split is probably poor)
-
-    //cout << "creating empty schedules..." << endl;
-    int rounds = 3; //arbitraily chosen, should be algorithmically chosen
-    vector<vector<double> > machine_schedule;
-    round_schedules.push_back(machine_schedule); //empty schedule which we will initially fill with everything
-    //fill machine_schedule with p empty vectors (one for each machine)
-    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine) {
-        vector<double> vmschedule;
-        machine_schedule.push_back(vmschedule);
-    }
-    int total_machines = machines.size();
-    //add r-1 empty schedules (the first schedule is filled with everything so is a special case)
-    for(int i = 1; i < rounds; i++) {
-        round_schedules.push_back(machine_schedule);
-    }
-
-    //count the vms so we can decide how many vms to move
+double getavgbackup(vector<map<int,double> > &machines, vector<vector<vector<int> > > &schedule) {
+    double schedule_time = 0;
     int total_vms = 0;
-    for(vector<vector<double> >::iterator machine = machines.begin(); machine != machines.end(); ++machine)
-    {
-        total_vms += (*machine).size();
-    }
-
-    //fill round 0 with all the vms initally (then we iteratively push vms forward)
-    round_schedules[0].insert(round_schedules[0].end(), machines.begin(), machines.end());
-    machines.clear();
-
-
-    //in each iteration, we push vms from source_round to dest_round
-    vector<vector<vector<double> > >::iterator source_round = round_schedules.begin();
-    vector<vector<vector<double> > >::iterator dest_round = round_schedules.begin();
-    ++dest_round; //dest round is always one ahead of source_round
-
-    //loop through each additional round, pushing vms forward - this loop should maybe be based on some heuristic
-    for(int r = 1; r < rounds; r++) {
-        //to move right now performs an even split between rounds, should really be based on some heuristic
-        //issue: there are some vms which should really be scheduled by themselves, even split prevents this (e.g. giant VM)
-        int to_move = total_vms - r*(total_vms / rounds);
-
-        //now we iteratively offload vms to the next round, maybe instead of a to_move loop there should be some target heuristic
-        for(int i = 0; i < to_move; i++) {
-            int mid;
-            //first pick the vm to add (returns an iterator and machine id)
-            //main metric is highest ucow (with tie-breaking based on machine load)
-            vector<double>::iterator max_vm = pick_vm(*source_round, mid);
-            //now add the vm to the correct machine in the dest_round
-            (*dest_round)[mid].push_back(*max_vm);
-            //finally remove the vm from the source_round
-            (*source_round)[mid].erase(max_vm);
+    for(vector<vector<vector<int> > >::iterator round = schedule.begin();
+            round != schedule.end(); ++round) {
+        vector<map<int, double> > loads;
+        int round_vms = 0;
+        for(int i = 0; i < (*round).size(); i++) {
+            map<int, double> machine_load;
+            for(int j = 0; j < (*round)[i].size(); j++) {
+                //ss << "  machines[" << i << "][" << (*round)[i][j] << "] = ";
+                map<int,double>::const_iterator lookup = machines[i].find((*round)[i][j]);
+                if (lookup == machines[i].end()) {
+                    cout << "  machines[" << i << "][" << (*round)[i][j] << "] = NOT FOUND";
+                } else {
+                    machine_load[(*round)[i][j]] = lookup->second;
+                    round_vms++;
+                }
+            }
+            loads.push_back(machine_load);
         }
-        source_round=dest_round;
-        ++dest_round;
+        total_vms += round_vms;
+        schedule_time += model_time(loads,false) * round_vms;
     }
-
-
-    round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
-    round_schedules.pop_back();
-
-    return true;
+    return schedule_time / total_vms;
 }
 
-const char * CowScheduler::getName() {
-    return "CoW Scheduler";
+double getminjobspan(vector<map<int,double> > &machines) {
+    return model_time(machines, false);
 }
-*/
+
+void BPLScheduler2::schedule_vms(vector<map<int,double> > &machines) {
+    //cout << "About to start scheduling vms" << endl;
+    double minjobspan = getminjobspan(machines);
+    double minavgbackup = getminavgbackup(machines);
+    int total_count = 0;
+    double total_size = 0;
+    double schedule_time;
+    for(vector<map<int, double> >::iterator machine = machines.begin();
+            machine != machines.end(); ++machine) {
+        for(map<int, double>::iterator vm = (*machine).begin();
+                vm != (*machine).end(); ++vm) {
+            total_count++;
+            total_size += vm->second;
+        }
+    }
+    //cout << "total count: " << total_count << "; total machines: " << machines.size() << endl;
+    int UB = 2*total_count/machines.size();
+    if (UB > total_count) {
+        UB = total_count;
+    }
+    int k = 1;
+    int mink = 1;
+    double mincost;
+    while (k < UB) {
+        schedule_time = pack_vms(machines,k);
+        double cost = bpl2cost(alpha, schedule_time, minjobspan, getavgbackup(machines,round_schedules), minavgbackup);
+        //cout << "rounds: " << k << "; time: " << schedule_time << "; time limit: " << time_limit << endl;
+        if (schedule_time > time_limit) {
+            break;
+        } else {
+            if (k == 1 || cost < mincost) {
+                mink = k;
+                mincost = cost;
+            }
+        }
+        k++;
+    }
+    schedule_time = pack_vms(machines,mink);
+    stringstream ss;
+    ss << "final rounds: " << mink << "; time: " << schedule_time << "; time limit: " << time_limit << "; count: " << total_count << "; data: " << total_size << endl;
+    cout << ss.str();
+}
+
+BPLScheduler2::BPLScheduler2() {
+    scheduled = false;
+    alpha = 0.5;
+}
+
+BPLScheduler2::BPLScheduler2(double alpha) {
+    scheduled = false;
+    this->alpha = alpha;
+}
+
+bool BPLScheduler2::schedule_round(std::vector<std::vector<int> > &round_schedule) {
+    //cout << "About to start scheduling round" << endl;
+    round_schedule.clear();
+    if (scheduled && round_schedules.empty()) {
+        return false; //finished with schedule
+    } else if (!round_schedules.empty()) {
+        //have rounds to schedule
+        //cout << print_schedules(round_schedules);
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        return true;
+    } else if (machines.empty()) {
+        //we haven't been scheduled yet, but there are no machines to schedule
+        return false;
+    } else { //we need to schedule
+        schedule_vms(machines);
+        scheduled = true;
+        //cout << print_loads(round_schedules, machines);
+        //cout << print_schedules(round_schedules);
+        //cout << format_time(model_time(machines,true));
+        machines.clear(); //TODO: is this a problem?
+        //cerr << print_settings(time_limit);
+        round_schedule.insert(round_schedule.end(),round_schedules.back().begin(), round_schedules.back().end());
+        round_schedules.pop_back();
+        //cout << print_schedules(round_schedules);
+        return true;
+    }
+}
+
+const char * BPLScheduler2::getName() {
+    return "Bin Packing Scheduler w/cost minimization";
+}

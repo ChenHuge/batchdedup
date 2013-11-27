@@ -123,6 +123,7 @@ void usage(const char* progname) {
         //"  --bpschedule - machine by machine scheduler which uses basic bin packing" << endl << 
         //"  --dbpn1schedule - Naive Dual Bin Packing scheduler" << endl <<
         //"  --dbpn2schedule - Naive Dual Bin Packing scheduler 2" << 
+        "  --bplschedule - bin packing scheduler using binary search" << endl << 
         endl;
 }
 
@@ -144,6 +145,7 @@ int main (int argc, char *argv[]) {
     char *endptr;
     vector<RoundScheduler*> schedulers;
     double time_limit = DEFAULT_TIME_LIMIT;
+    double alpha = 0.5;
     while(argi < argc && argv[argi][0] == '-') {
         if (!strcmp(argv[argi],"--")) {
             argi++; break;
@@ -173,9 +175,12 @@ int main (int argc, char *argv[]) {
         //} else if (!strcmp(argv[argi],"--dbpn2schedule")) {
         //    argi++;
         //    schedulers.push_back(new DBPN2Scheduler());
-        //} else if (!strcmp(argv[argi],"--bplschedule")) {
-        //    argi++;
-        //    schedulers.push_back(new BinPackLocalScheduler());
+        } else if (!strcmp(argv[argi],"--bplschedule")) {
+            argi++;
+            schedulers.push_back(new BPLScheduler());
+        } else if (!strcmp(argv[argi],"--bplschedule2")) {
+            argi++;
+            schedulers.push_back(new BPLScheduler2(alpha));
         //} else if (!strcmp(argv[argi],"--bpgschedule")) {
         //    argi++;
         //    schedulers.push_back(new BinPackGlobalScheduler());
@@ -185,53 +190,61 @@ int main (int argc, char *argv[]) {
             machinefile=argv[++argi];
             argi++;
         } else if (!strcmp(argv[argi],"--segdirty")) {
+            segment_dirty_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid dirty ratio or none given";
                 usage(argv[0]);
                 return -1;
             }
-            segment_dirty_ratio = strtod(argv[++argi],&endptr);
             argi++;
         } else if (!strcmp(argv[argi],"--fpratio")) {
+            fp_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid fp ratio or none given";
                 usage(argv[0]);
                 return -1;
             }
-            fp_ratio = strtod(argv[++argi],&endptr);
+            argi++;
+        } else if (!strcmp(argv[argi],"--schalpha")) {
+            alpha = strtod(argv[++argi],&endptr);
+            if (endptr == argv[argi]) {
+                cout << "invalid scheduler alpha or none given";
+                usage(argv[0]);
+                return -1;
+            }
             argi++;
         } else if (!strcmp(argv[argi],"--dupnewratio")) {
+            dupnew_ratio = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid dupnew ratio or none given";
                 usage(argv[0]);
                 return -1;
             }
-            dupnew_ratio = strtod(argv[++argi],&endptr);
             argi++;
         } else if (!strcmp(argv[argi],"--netlatency")) {
+            net_latency = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid network latency or none given";
                 usage(argv[0]);
                 return -1;
             }
-            net_latency = strtod(argv[++argi],&endptr);
             argi++;
         } else if (!strcmp(argv[argi],"--readbandwidth")) {
+            read_bandwidth = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid disk bandwidth or none given";
                 usage(argv[0]);
                 return -1;
             }
-            read_bandwidth = strtod(argv[++argi],&endptr);
             read_bandwidth *= BANDWIDTH_UNIT;
             argi++;
         } else if (!strcmp(argv[argi],"--diskwritebandwidth")) {
+            disk_write_bandwidth = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid disk bandwidth or none given";
                 usage(argv[0]);
                 return -1;
             }
-            disk_write_bandwidth = strtod(argv[++argi],&endptr);
             disk_write_bandwidth *= BANDWIDTH_UNIT;
             argi++;
         //} else if (!strcmp(argv[argi],"--backwritebandwidth")) {
@@ -244,30 +257,30 @@ int main (int argc, char *argv[]) {
         //    backend_write_bandwidth *= BANDWIDTH_UNIT;
         //    argi++;
         } else if (!strcmp(argv[argi],"--timelimit")) {
+            time_limit = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid time limit or none given";
                 usage(argv[0]);
                 return -1;
             }
-            time_limit = strtod(argv[++argi],&endptr);
             argi++;
         } else if (!strcmp(argv[argi],"--netmemory")) {
+            network_memory = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid memory amount or none given";
                 usage(argv[0]);
                 return -1;
             }
-            network_memory = strtod(argv[++argi],&endptr);
             //convert memory quantity to bytes
             network_memory *= MEMORY_UNIT;
             argi++;
         } else if (!strcmp(argv[argi],"--indexsize")) {
+            n = strtod(argv[++argi],&endptr);
             if (endptr == argv[argi]) {
                 cout << "invalid machine index size or none given";
                 usage(argv[0]);
                 return -1;
             }
-            n = strtod(argv[++argi],&endptr);
             argi++;
         } else {
             cout << "Unknown argument: " << argv[argi] << endl;
