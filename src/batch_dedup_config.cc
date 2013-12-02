@@ -133,7 +133,7 @@ bool Env::InitRound(int r)
     mRound = r;
     if (mMyVmSchedule.size() == 0) {
         //NullScheduler scheduler;
-        DBPScheduler2 scheduler;
+        BPLScheduler2 scheduler;
         Env::ScheduleVMs(&scheduler);
     }
     return mMyVmSchedule.size() > r;
@@ -277,7 +277,7 @@ int Env::GetVmId(size_t idx)
 
     if (mMyVmSchedule.size() == 0) {
         //NullScheduler scheduler;
-        DBPScheduler2 scheduler;
+        BPLScheduler2 scheduler;
         Env::ScheduleVMs(&scheduler);
     }
 
